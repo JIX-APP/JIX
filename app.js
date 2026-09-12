@@ -8,15 +8,15 @@
    وليس https://supabase.co (وهو موقع الشركة نفسه وليس رابط مشروع).
    شغّل ملف supabase-schema.sql داخل Supabase SQL Editor قبل الربط.
 ============================================================ */
-const SUPABASE_URL = 'https://YOUR-PROJECT-ID.supabase.co';
-const SUPABASE_ANON_KEY = 'YOUR-ANON-PUBLIC-KEY';
+const SUPABASE_URL = 'https://wfvhzlpvtgnydhmsxcqr.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_B6aT1T-ft6Stj0RfPk0xxw_gxpeXnA1';
 
 const { escapeHtml, clampLength, sanitizeUrl, isValidEmail, isValidHandle,
         secureId, rateLimiter, safeStorage, isValidCoinAmount } = JixSecurity;
 
 const isSupabaseConfigured =
   /^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(SUPABASE_URL) &&
-  SUPABASE_ANON_KEY && SUPABASE_ANON_KEY !== 'YOUR-ANON-PUBLIC-KEY';
+  SUPABASE_ANON_KEY && SUPABASE_ANON_KEY !== 'sb_publishable_B6aT1T-ft6Stj0RfPk0xxw_gxpeXnA1';
 
 let sb = null;
 if (isSupabaseConfigured && window.supabase) {
