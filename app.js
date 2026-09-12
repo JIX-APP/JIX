@@ -723,16 +723,14 @@ init();
 // 🛡️ نظام حماية JIX المتكامل (ذكاء اصطناعي + بلاغات المستخدمين)
 // ========================================================
 
-// ⚠️ ضع مفاتيحك الخاصة التي نسختها من موقع Sightengine هنا بين علامات التنصيص المفردة
-const SIGHTENGINE_USER = '478295387';
-const SIGHTENGINE_SECRET = 'qDYGumGbULyBrUmaHTMUzRVQWqiizW2J';
+// المفاتيح الخاصة بك من موقع Sightengine
+const SIGHTENGINE_USER = 'ضع_هنا_رقم_api_key_الذي_نسخته';
+const SIGHTENGINE_SECRET = 'ضع_هنا_مفتاح_api_secret_الذي_نسخته';
 
-/**
- * 🤖 1. دالة فحص الفيديو بالذكاء الاصطناعي فور الرفع
- */
+// 🤖 دالة فحص الفيديو بالذكاء الاصطناعي فور الرفع
 async function checkVideoWithAI(videoUrl, postId) {
     try {
-        // نستخدم متغير الاتصال 'sb' المعتمد في تطبيقك بدلاً من supabaseClient
+        // تم التعديل هنا لاستخدام المتغير الأصلي 'sb' الخاص بمشروعك
         const response = await fetch(`https://sightengine.com{encodeURIComponent(videoUrl)}&models=nudity-2.0,wad,gore&api_user=${SIGHTENGINE_USER}&api_secret=${SIGHTENGINE_SECRET}`);
         const result = await response.json();
 
@@ -756,17 +754,10 @@ async function checkVideoWithAI(videoUrl, postId) {
     }
 }
 
-/**
- * 👥 2. دالة تمكين المستخدمين من التبليغ اليدوي عن فيديو سيئ
- */
+// 👥 دالة التبليغ اليدوي عن فيديو سيئ
 async function reportPost(postId) {
     const confirmReport = confirm("هل تود التبليغ عن هذا الفيديو بسبب محتوى عنيف أو غير أخلاقي؟");
     if (!confirmReport) return;
-
-    if (!sb) {
-        alert("نظام الاتصال غير جاهز حالياً.");
-        return;
-    }
 
     const sessionData = await sb.auth.getSession();
     const currentUserId = sessionData.data.session?.user?.id;
@@ -794,9 +785,7 @@ async function reportPost(postId) {
     checkReportThreshold(postId);
 }
 
-/**
- * ⚙️ 3. دالة التحقق من وصول البلاغات للحد الأقصى واختفاء الفيديو
- */
+// ⚙️ دالة التحقق من وصول البلاغات للحد الأقصى واختفاء الفيديو
 async function checkReportThreshold(postId) {
     const { count, error } = await sb
         .from('notifications')
@@ -811,5 +800,5 @@ async function checkReportThreshold(postId) {
     }
 }
 
-// تصدير الدوال للنافذة العامة لضمان عدم حدوث خطأ بالتنقل
+// تصدير الدوال لكي تصبح جاهزة للعمل في الواجهة
 window.reportPost = reportPost;
