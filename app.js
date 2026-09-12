@@ -719,3 +719,73 @@ async function init() {
   renderProfile();
 }
 init();
+// ========================================================
+// 🛡️ نظام حماية JIX المتكامل (تم دمج مفاتيحك الشخصية بنجاح)
+// ========================================================
+
+const SIGHTENGINE_USER = '478295387';
+const SIGHTENGINE_SECRET = 'qDYGumGbULyBrUmaHTMUzRVQWqiizW2J';
+
+// 🤖 دالة فحص الفيديو بالذكاء الاصطناعي فور الرفع
+async function checkVideoWithAI(videoUrl, postId) {
+    try {
+        const response = await fetch(`https://sightengine.com{encodeURIComponent(videoUrl)}&models=nudity-2.0,wad,gore&api_user=${SIGHTENGINE_USER}&api_secret=${SIGHTENGINE_SECRET}`);
+        const result = await response.json();
+
+        if (result.status === 'success') {
+            const isNudity = result.summary?.nudity > 0.4; 
+            const isViolence = result.summary?.wad > 0.4;  
+            const isGore = result.summary?.gore > 0.4;      
+
+            if (isNudity || isViolence || isGore) {
+                if (window.sb) {
+                    await window.sb.from('posts').delete().eq('id', postId);
+                    const fileName = videoUrl.split('/').pop();
+                    await window.sb.storage.from('videos').remove([fileName]);
+                }
+                alert("🚨 حظر تلقائي: تم حذف الفيديو فوراً بواسطة الذكاء الاصطناعي لمخالفته معايير الأمان العامة لقناتنا.");
+                return false;
+            }
+        }
+        return true; 
+    } catch (error) {
+        console.error("خطأ أثناء فحص الذكاء الاصطناعي:", error);
+        return true; 
+    }
+}
+
+// 👥 دالة التبليغ اليدوي وحذف الفيديو تلقائياً بعد 3 بلاغات
+async function reportPost(postId) {
+    const confirmReport = confirm("هل تود التبليغ عن هذا الفيديو بسبب محتوى عنيف أو غير أخلاقي؟");
+    if (!confirmReport) return;
+
+    if (!window.sb) {
+        alert("نظام الاتصال غير جاهز حالياً.");
+        return;
+    }
+
+    const sessionData = await window.sb.auth.getSession();
+    const currentUserId = sessionData.data.session?.user?.id;
+
+    if (!currentUserId) {
+        alert("يرجى تسجيل الدخول أولاً لتتمكن من التبليغ!");
+        return;
+    }
+
+    await window.sb.from('notifications').insert([
+        { user_id: currentUserId, type: 'report', post_id: postId, message: 'بلغ مستخدم عن فيديو مخالف لقواعد المجتمع.' }
+    ]);
+
+    alert("شكرًا لك! تم استلام بلاغك بنجاح وجاري مراجعة الفيديو.");
+    
+    const { count } = await window.sb.from('notifications').select('*', { count: 'exact', head: true }).eq('post_id', postId).eq('type', 'report');
+    if (count >= 3) {
+        await window.sb.from('posts').delete().eq('id', postId);
+        alert("تم إخفاء وحذف الفيديو تلقائياً بسبب كثرة بلاغات المستخدمين.");
+        location.reload();
+    }
+}
+
+// تصدير الدوال للنافذة العامة لضمان عملها مع ملف الـ HTML والأزرار الأصلية
+window.reportPost = reportPost;
+window.checkVideoWithAI = checkVideoWithAI;
