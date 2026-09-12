@@ -257,5 +257,74 @@
 <script src="security.js" defer></script>
 <script src="gifts-data.js" defer></script>
 <script src="app.js" defer></script>
+<script>
+  // ربط التطبيق بـ Supabase (استبدل القيم ببيانات مشروعك الحقيقية)
+  const SUPABASE_URL = "https://supabase.co"; 
+  const SUPABASE_ANON_KEY = "sb_publish_ضع_مفتاحك_هنا";
+  
+  const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // ربط أزرار واجهتك الحالية برمجياً وتفعيلها عند الضغط عليها
+  document.addEventListener("DOMContentLoaded", () => {
+    // تفعيل زر إرسال الرمز
+    const sendBtn = document.getElementById("auth-send-btn");
+    if (sendBtn) {
+      sendBtn.addEventListener("click", async () => {
+        // جلب الإيميل من الحقل المخصص له في السطر 236
+        const emailInput = document.querySelector("#auth-modal input[type='email']");
+        const email = emailInput ? emailInput.value.trim() : "";
+        
+        if (!email) {
+          alert("الرجاء إدخال البريد الإلكتروني أولاً!");
+          return;
+        }
+        
+        alert("جاري إرسال الرمز...");
+        const { data, error } = await supabase.auth.signInWithOtp({
+          email: email,
+          options: { shouldCreateUser: true }
+        });
+
+        if (error) {
+          alert("خطأ أثناء الإرسال: " + error.message);
+        } else {
+          alert("تم إرسال الرمز بنجاح! يرجى التحقق من بريدك وكتابته في حقل الرمز.");
+        }
+      });
+    }
+
+    // تفعيل زر تأكيد الدخول بالرمز (الموجود بالسطر 240)
+    const verifyBtn = document.getElementById("auth-verify-btn");
+    if (verifyBtn) {
+      verifyBtn.addEventListener("click", async () => {
+        const emailInput = document.querySelector("#auth-modal input[type='email']");
+        const otpInput = document.getElementById("auth-otp-input") || document.querySelector("#auth-modal input[type='text']");
+        
+        const email = emailInput ? emailInput.value.trim() : "";
+        const token = otpInput ? otpInput.value.trim() : "";
+
+        if (!token) {
+          alert("يرجى كتابة رمز التحقق أولاً!");
+          return;
+        }
+
+        const { data, error } = await supabase.auth.verifyOtp({
+          email: email,
+          token: token,
+          type: 'magiclink'
+        });
+
+        if (error) {
+          alert("الرمز غير صحيح: " + error.message);
+        } else {
+          alert("تم تسجيل الدخول بنجاح! أهلاً بك في JIX");
+          // إخفاء نافذة الدخول تلقائياً
+          const authModal = document.getElementById("auth-modal");
+          if (authModal) authModal.style.display = "none";
+        }
+      });
+    }
+  });
+</script>
 </body>
 </html>
