@@ -723,51 +723,50 @@ init();
 // 🛡️ نظام حماية JIX المتكامل (ذكاء اصطناعي + بلاغات المستخدمين)
 // ========================================================
 
-// ⚠️ ضع مفاتيحك الخاصة التي نسختها من موقع Sightengine هنا بين علامات التنصيص
+// ⚠️ ضع مفاتيحك الخاصة التي نسختها من موقع Sightengine هنا بين علامات التنصيص المفردة
 const SIGHTENGINE_USER = '478295387';
 const SIGHTENGINE_SECRET = 'qDYGumGbULyBrUmaHTMUzRVQWqiizW2J';
 
 /**
  * 🤖 1. دالة فحص الفيديو بالذكاء الاصطناعي فور الرفع
- * تمنع ظهور أي فيديو مخالف في التطبيق وتحذفه تلقائياً من السيرفر
  */
 async function checkVideoWithAI(videoUrl, postId) {
     try {
-        // إرسال رابط الفيديو السحابي إلى سيل الذكاء الاصطناعي لـ Sightengine لفحصه
+        // نستخدم متغير الاتصال 'sb' المعتمد في تطبيقك بدلاً من supabaseClient
         const response = await fetch(`https://sightengine.com{encodeURIComponent(videoUrl)}&models=nudity-2.0,wad,gore&api_user=${SIGHTENGINE_USER}&api_secret=${SIGHTENGINE_SECRET}`);
         const result = await response.json();
 
         if (result.status === 'success') {
-            const isNudity = result.summary?.nudity > 0.4; // فحص اللقطات غير الأخلاقية (أعلى من 40%)
-            const isViolence = result.summary?.wad > 0.4;  // فحص الأسلحة والعنف (أعلى من 40%)
-            const isGore = result.summary?.gore > 0.4;      // فحص الدماء والمشاهد القاسية (أعلى من 40%)
+            const isNudity = result.summary?.nudity > 0.4; 
+            const isViolence = result.summary?.wad > 0.4;  
+            const isGore = result.summary?.gore > 0.4;      
 
             if (isNudity || isViolence || isGore) {
-                // 🚫 إذا ثبتت المخالفة، يتم حذف المنشور فوراً من قاعدة البيانات لحماية المجتمع
                 await sb.from('posts').delete().eq('id', postId);
-                
-                // حذف ملف الفيديو الفيزيائي من الـ Storage لحفظ مساحة مشروعك
                 const fileName = videoUrl.split('/').pop();
                 await sb.storage.from('videos').remove([fileName]);
-
-                alert("🚨 حظر تلقائي: تم رفض ونشر الفيديو وحذفه فوراً بواسطة الذكاء الاصطناعي لمخالفته معايير الأمان والعنف.");
+                alert("🚨 حظر تلقائي: تم حذف الفيديو فوراً بواسطة الذكاء الاصطناعي لمخالفته معايير الأمان.");
                 return false;
             }
         }
-        return true; // الفيديو سليم وآمن تماماً للمشاهدة
+        return true; 
     } catch (error) {
         console.error("خطأ أثناء فحص الذكاء الاصطناعي:", error);
-        return true; // نمرر الفيديو لتجنب تعطيل التطبيق في حال حدوث بطء في خدمة الفحص خارجية
+        return true; 
     }
 }
 
 /**
  * 👥 2. دالة تمكين المستخدمين من التبليغ اليدوي عن فيديو سيئ
- * تضع حلاً مجتمعياً يتيح للمشاهدين حماية التطبيق بيدك
  */
 async function reportPost(postId) {
     const confirmReport = confirm("هل تود التبليغ عن هذا الفيديو بسبب محتوى عنيف أو غير أخلاقي؟");
     if (!confirmReport) return;
+
+    if (!sb) {
+        alert("نظام الاتصال غير جاهز حالياً.");
+        return;
+    }
 
     const sessionData = await sb.auth.getSession();
     const currentUserId = sessionData.data.session?.user?.id;
@@ -777,7 +776,6 @@ async function reportPost(postId) {
         return;
     }
 
-    // تسجيل البلاغ في جدول الإشعارات داخل قاعدة بيانات سوبابيز كـ 'report'
     const { error } = await sb.from('notifications').insert([
         { 
             user_id: currentUserId,
@@ -788,18 +786,16 @@ async function reportPost(postId) {
     ]);
 
     if (error) {
-        alert("تعذر إرسال البلاغ حالياً، يرجى المحاولة لاحقاً.");
+        alert("تعذر إرسال البلاغ حالياً.");
         return;
     }
 
-    alert("شكرًا لك على حرصك! تم استلام بلاغك بنجاح، وجاري التحقق من محتوى الفيديو.");
-    
-    // تشغيل فحص البلاغات؛ إذا تكرر البلاغ 3 مرات من أشخاص مختلفين يتم الحظر تلقائياً
+    alert("شكرًا لك! تم استلام بلاغك بنجاح وجاري مراجعة الفيديو.");
     checkReportThreshold(postId);
 }
 
 /**
- * ⚙️ 3. دالة التحقق من وصول البلاغات للحد الأقصى (3 بلاغات) واختفاء الفيديو
+ * ⚙️ 3. دالة التحقق من وصول البلاغات للحد الأقصى واختفاء الفيديو
  */
 async function checkReportThreshold(postId) {
     const { count, error } = await sb
@@ -809,9 +805,11 @@ async function checkReportThreshold(postId) {
         .eq('type', 'report');
 
     if (!error && count >= 3) {
-        // حذف الفيديو نهائياً من قاعدة البيانات بعد تكرار شكاوى المستخدمين
         await sb.from('posts').delete().eq('id', postId);
-        alert("تم إخفاء وحذف هذا المنشور تلقائياً بعد مراجعته وحصوله على بلاغات متعددة لحماية المشاهدين.");
-        location.reload(); // تحديث واجهة التطبيق لإخفاء الفيديو فوراً من الشاشة
+        alert("تم إخفاء وحذف هذا المنشور تلقائياً بعد مراجعته وحصوله على بلاغات متعددة.");
+        location.reload(); 
     }
 }
+
+// تصدير الدوال للنافذة العامة لضمان عدم حدوث خطأ بالتنقل
+window.reportPost = reportPost;
