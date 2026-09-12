@@ -3,17 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<!--
-  ملاحظة أمان: سياسة Content-Security-Policy الصارمة أُزيلت من هنا لأنها
-  تمنع تحميل style.css/app.js عند فتح الملف محلياً (file://) على بعض
-  المتصفحات، خصوصاً Safari على iOS. عند رفع الموقع على استضافة حقيقية
-  (Netlify/Vercel/etc)، فعّلها من إعدادات الاستضافة كـ HTTP Header حقيقي
-  (وليس meta tag) — هذا هو المكان الصحيح لها أصلاً، وهي القيمة الموصى بها:
-  default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self';
-  img-src 'self' https: data: blob:; media-src 'self' https: blob:;
-  connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.agora.io https://*.livekit.cloud wss://*.livekit.cloud;
-  frame-ancestors 'none';
--->
 <title>JIX</title>
 <link rel="stylesheet" href="style.css">
 </head>
@@ -126,9 +115,8 @@
       <div class="profile-actions">
         <button class="edit-profile-btn" id="edit-profile-open">تعديل الملف الشخصي</button>
         <button class="edit-profile-btn" id="wallet-btn">💰 المحفظة</button>
-        <button class="edit-profile-btn" id="login-trigger-btn" style="background: #fe2c55; color: #fff;">🔐 تسجيل الدخول</button>
-        <button class="edit-profile-btn" id="logout-trigger-btn" style="background: #333; color: #fff;">🚪 تسجيل الخروج</button>
-
+        <!-- ⚙️ تم تنظيف الواجهة بوضع زر موحد مستقل للإعدادات هنا -->
+        <button class="edit-profile-btn" id="open-settings-page-btn" style="background: #2c2c2e; color: #fff;">⚙️ الإعدادات والخصوصية</button>
       </div>
     </div>
     <div class="profile-tabs">
@@ -137,6 +125,45 @@
     </div>
     <div class="profile-videos-grid" id="profile-grid-videos"></div>
     <div class="profile-videos-grid" id="profile-grid-liked" style="display:none;"></div>
+  </div>
+</div>
+
+<!-- ⚙️ 7️⃣ صفحة الإعدادات والخصوصية المستقلة والكاملة للمنصة -->
+<div id="settings-page" class="page">
+  <div class="top-header">
+    <div class="header-icon" id="back-to-profile-btn" style="cursor: pointer; font-size: 20px;">➡️</div>
+    <div class="page-title" style="margin-right: auto; margin-left: auto;">الإعدادات والخصوصية</div>
+    <div style="width: 24px;"></div>
+  </div>
+  
+  <div class="settings-list" style="padding: 15px;">
+    <!-- قسم الحساب -->
+    <div class="settings-section-title" style="color: #8a8a8f; font-size: 13px; margin-bottom: 10px; margin-top: 20px;">الحساب</div>
+    <button class="settings-item-btn" id="login-trigger-btn" style="width: 100%; background: #fe2c55; color: #fff; border: none; padding: 15px; border-radius: 10px; font-weight: bold; margin-bottom: 10px; text-align: right; display: flex; justify-content: space-between; align-items: center;">
+      <span>🔐 تسجيل الدخول أو إنشاء حساب جديد</span> <span>❯</span>
+    </button>
+    
+    <!-- قسم الأمان والخصوصية -->
+    <div class="settings-section-title" style="color: #8a8a8f; font-size: 13px; margin-bottom: 10px; margin-top: 20px;">الخصوصية والأمان</div>
+    <div style="background: #1c1c1e; border-radius: 10px; padding: 5px; margin-bottom: 20px;">
+      <div style="padding: 15px; color: #fff; display: flex; justify-content: space-between; border-bottom: 1px solid #2c2c2e;">
+        <span>حساب خاص</span>
+        <input type="checkbox" id="private-account-toggle">
+      </div>
+      <div style="padding: 15px; color: #fff; display: flex; justify-content: space-between;">
+        <span>قائمة الحظر</span>
+        <span style="color: #8a8a8f;">❯</span>
+      </div>
+    </div>
+
+    <!-- قسم الإجراءات الحساسة -->
+    <div class="settings-section-title" style="color: #8a8a8f; font-size: 13px; margin-bottom: 10px;">إجراءات النظام</div>
+    <button class="settings-item-btn" id="logout-trigger-btn" style="width: 100%; background: #2c2c2e; color: #ff3b30; border: none; padding: 15px; border-radius: 10px; font-weight: bold; margin-bottom: 10px; text-align: right; display: flex; justify-content: space-between; align-items: center;">
+      <span>🚪 تسجيل الخروج من الحساب</span> <span>❯</span>
+    </button>
+    <button class="settings-item-btn" id="delete-account-btn" style="width: 100%; background: #1c1c1e; color: #ff3b30; border: none; padding: 15px; border-radius: 10px; font-weight: normal; text-align: right; display: flex; justify-content: space-between; align-items: center; opacity: 0.6;">
+      <span>🗑️ حذف الحساب نهائياً</span> <span>❯</span>
+    </button>
   </div>
 </div>
 
@@ -170,7 +197,6 @@
     </div>
   </div>
 </div>
-
 <!-- 📦 نافذة تعديل الحساب -->
 <div id="edit-modal" class="modal-overlay">
   <div class="modal-content">
@@ -192,9 +218,9 @@
     <div class="sheet-handle"></div>
     <h3><span id="comments-count">0</span> تعليق</h3>
     <div id="comments-list" class="comments-list"></div>
-    <div class="chat-input-area">
-      <input type="text" id="comment-input" maxlength="200" placeholder="أضف تعليقاً...">
-      <button class="chat-send-btn" id="comment-send-btn">إرسال</button>
+    <div class="comment-input-area">
+      <input type="text" id="comment-input-field" maxlength="150" placeholder="أضف تعليقاً...">
+      <button class="chat-send-btn" id="comment-send-btn">نشر</button>
     </div>
   </div>
 </div>
@@ -246,7 +272,7 @@
   </div>
 </div>
 
-<!-- 📱 شريط التنقل -->
+<!-- 📱 شريط التنقل السفلي الثابت -->
 <div class="bottom-nav">
   <div class="nav-item active" id="nav-home" data-tab="home"><div class="nav-icon">🏠</div><span>الرئيسية</span></div>
   <div class="nav-item" id="nav-discover" data-tab="discover"><div class="nav-icon">🔍</div><span>اكتشف</span></div>
@@ -254,12 +280,14 @@
   <div class="nav-item" id="nav-inbox" data-tab="inbox"><div class="nav-icon">📥</div><span id="inbox-badge-wrap">الرسائل<span id="inbox-badge" class="badge" style="display:none;"></span></span></div>
   <div class="nav-item" id="nav-profile" data-tab="profile"><div class="nav-icon">👤</div><span>حسابي</span></div>
 </div>
-<!-- 🔗 ربط تطبيق JIX بقاعدة بيانات سوبابيز بالرابط الصحيح الحقيقي -->
+
+<!-- 🔗 ربط تطبيق JIX بقاعدة بيانات سوبابيز بالرابط الصحيح الحقيقي والمثالي -->
 <script>
   window.SUPABASE_URL = "https://wfvhzlpvtgnydhmsxcqr.supabase.co/";
   window.SUPABASE_ANON_KEY = "sb_publishable_B6aT1T-ft6Stj0RfPk0xxw_gxpeXnA1";
 </script>
 
+<!-- تحميل مكتبات السيرفر والنظام الأصلي دفعة واحدة دون أخطاء -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="live-config.js" defer></script>
 <script src="security.js" defer></script>
