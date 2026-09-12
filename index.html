@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<!--
+  ملاحظة أمان: سياسة Content-Security-Policy الصارمة أُزيلت من هنا لأنها
+  تمنع تحميل style.css/app.js عند فتح الملف محلياً (file://) على بعض
+  المتصفحات، خصوصاً Safari على iOS. عند رفع الموقع على استضافة حقيقية
+  (Netlify/Vercel/etc)، فعّلها من إعدادات الاستضافة كـ HTTP Header حقيقي
+  (وليس meta tag) — هذا هو المكان الصحيح لها أصلاً، وهي القيمة الموصى بها:
+  default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self';
+  img-src 'self' https: data: blob:; media-src 'self' https: blob:;
+  connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.agora.io https://*.livekit.cloud wss://*.livekit.cloud;
+  frame-ancestors 'none';
+-->
+<title>JIX</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- 🔔 نظام إشعارات التنبيه (Toast) -->
+<div id="toast-container"></div>
+
+<!-- 1️⃣ الرئيسية / الفيديوهات -->
+<div id="home-page" class="page active">
+  <div class="top-header">
+    <div class="header-tabs">
+      <span class="header-tab" data-feed="following">أتابعهم</span>
+      <span class="header-tab active" data-feed="foryou">لك</span>
+    </div>
+    <div class="jix-logo">JIX</div>
+    <div class="header-icon" id="live-shortcut" title="البث المباشر">🔴</div>
+  </div>
+  <div class="app-container" id="jix-feed"></div>
+</div>
+
+<!-- 2️⃣ اكتشف -->
+<div id="discover-page" class="page">
+  <div class="page-title">اكتشف</div>
+  <div class="search-box">
+    <input type="text" id="search-input" maxlength="60" placeholder="ابحث عن مستخدمين أو هاشتاق...">
+  </div>
+  <div class="discover-scroll">
+    <div class="trending-section">
+      <div class="trending-title">🔥 الهاشتاقات الرائجة</div>
+      <div id="trending-list"></div>
+    </div>
+    <div class="trending-section">
+      <div class="trending-title">🏆 التحديات النشطة</div>
+      <div id="challenges-list"></div>
+    </div>
+    <div class="trending-section">
+      <div class="trending-title">👥 حسابات مقترحة</div>
+      <div id="suggested-users"></div>
+    </div>
+    <div id="search-results" class="trending-section" style="display:none;"></div>
+  </div>
+</div>
+
+<!-- 3️⃣ رفع فيديو -->
+<div id="upload-page" class="page">
+  <div class="page-title">إنشاء فيديو</div>
+  <div class="upload-container" id="upload-empty">
+    <div class="upload-icon">📹</div>
+    <p>اختر فيديو من جهازك لبدء النشر</p>
+    <input type="file" id="video-picker" accept="video/*" style="display:none;">
+    <button class="upload-select-btn" id="open-picker-btn">فتح المعرض</button>
+  </div>
+  <div class="upload-editor" id="upload-editor" style="display:none;">
+    <video id="upload-preview" muted playsinline></video>
+    <div class="upload-form">
+      <textarea id="upload-caption" maxlength="150" placeholder="اكتب وصفاً... استخدم # للهاشتاق"></textarea>
+      <div class="upload-row">
+        <label class="switch-row"><span>السماح بالتعليقات</span><input type="checkbox" id="allow-comments" checked></label>
+        <label class="switch-row"><span>السماح بالمشاركة</span><input type="checkbox" id="allow-share" checked></label>
+      </div>
+      <div class="upload-actions">
+        <button class="btn-cancel" id="discard-upload-btn">إلغاء</button>
+        <button class="btn-save" id="publish-btn">نشر</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 4️⃣ الرسائل: محادثات + دردشة جماعية + إشعارات -->
+<div id="inbox-page" class="page">
+  <div class="page-title">الرسائل</div>
+  <div class="inbox-tabs">
+    <span class="inbox-tab active" data-inbox="notifications">الإشعارات</span>
+    <span class="inbox-tab" data-inbox="dms">المحادثات</span>
+    <span class="inbox-tab" data-inbox="group">الدردشة الجماعية</span>
+  </div>
+
+  <div class="inbox-panel active" id="panel-notifications">
+    <div id="notifications-list" class="scroll-panel"></div>
+  </div>
+
+  <div class="inbox-panel" id="panel-dms">
+    <div id="dm-list" class="scroll-panel"></div>
+  </div>
+
+  <div class="inbox-panel" id="panel-group">
+    <div class="chat-box" id="chat-messages-container"></div>
+    <div class="chat-input-area">
+      <input type="text" id="chat-input-field" maxlength="300" placeholder="رسالة للجميع...">
+      <button class="chat-send-btn" id="chat-send-btn">إرسال</button>
+    </div>
+  </div>
+</div>
+
+<!-- 5️⃣ الملف الشخصي -->
+<div id="profile-page" class="page">
+  <div class="profile-scroll">
+    <div class="profile-header">
+      <div class="profile-pic" id="display-profile-pic">👤</div>
+      <div class="profile-username" id="display-name">جاري التحميل...</div>
+      <div class="profile-handle" id="display-handle">...</div>
+      <div class="profile-bio" id="display-bio"></div>
+      <div class="profile-stats">
+        <div class="stat-item" id="stat-following"><strong>0</strong><span>متابَع</span></div>
+        <div class="stat-item" id="stat-followers"><strong>0</strong><span>متابعون</span></div>
+        <div class="stat-item" id="stat-likes"><strong>0</strong><span>إعجاب</span></div>
+        <div class="stat-item" id="stat-coins"><strong>0</strong><span>عملات</span></div>
+      </div>
+      <div class="profile-actions">
+        <button class="edit-profile-btn" id="edit-profile-open">تعديل الملف الشخصي</button>
+        <button class="edit-profile-btn" id="wallet-btn">💰 المحفظة</button>
+      </div>
+    </div>
+    <div class="profile-tabs">
+      <span class="profile-tab active" data-ptab="videos">🎥 الفيديوهات</span>
+      <span class="profile-tab" data-ptab="liked">❤️ الإعجابات</span>
+    </div>
+    <div class="profile-videos-grid" id="profile-grid-videos"></div>
+    <div class="profile-videos-grid" id="profile-grid-liked" style="display:none;"></div>
+  </div>
+</div>
+
+<!-- 6️⃣ 🔴 البث المباشر -->
+<div id="live-page" class="page">
+  <div class="live-setup" id="live-setup">
+    <div class="page-title">بث مباشر</div>
+    <p class="live-setup-hint">
+      اختر نوع البث. البث الصوتي/المرئي الحقيقي بين المستخدمين يعمل عبر مزوّد بث خارجي
+      (Agora / LiveKit). ضع مفاتيح الاتصال في <code>live-config.js</code> لتفعيله الآن.
+    </p>
+    <div class="live-mode-choice">
+      <button class="live-mode-btn" data-mode="video">🎥 بث فيديو</button>
+      <button class="live-mode-btn" data-mode="audio">🎙️ بث صوتي (غرفة)</button>
+    </div>
+    <input type="text" id="live-title-input" maxlength="60" placeholder="عنوان البث...">
+    <button class="upload-select-btn" id="start-live-btn">ابدأ البث</button>
+  </div>
+
+  <div class="live-room" id="live-room" style="display:none;">
+    <video id="live-local-video" autoplay muted playsinline></video>
+    <div class="live-top-bar">
+      <div class="live-badge">🔴 مباشر</div>
+      <div class="live-viewers"><span id="live-viewer-count">0</span> مشاهد</div>
+      <div class="live-close" id="end-live-btn">إنهاء</div>
+    </div>
+    <div class="live-gift-feed" id="live-gift-feed"></div>
+    <div class="live-bottom-bar">
+      <input type="text" id="live-chat-input" maxlength="200" placeholder="علّق على البث...">
+      <button class="live-gift-btn" id="live-gift-open">🎁</button>
+    </div>
+  </div>
+</div>
+
+<!-- 📦 نافذة تعديل الحساب -->
+<div id="edit-modal" class="modal-overlay">
+  <div class="modal-content">
+    <h3>تعديل الملف الشخصي</h3>
+    <div class="input-group"><label>الاسم:</label><input type="text" id="input-name" maxlength="30"></div>
+    <div class="input-group"><label>اسم المستخدم:</label><input type="text" id="input-handle" maxlength="20"></div>
+    <div class="input-group"><label>نبذة:</label><input type="text" id="input-bio" maxlength="80"></div>
+    <div class="input-group"><label>رابط الصورة أو إيموجي:</label><input type="text" id="input-pic" maxlength="200"></div>
+    <div class="modal-buttons">
+      <button class="btn-save" id="save-profile-btn">حفظ</button>
+      <button class="btn-cancel" id="close-edit-btn">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- 💬 نافذة التعليقات -->
+<div id="comments-modal" class="modal-overlay">
+  <div class="modal-content comments-sheet">
+    <div class="sheet-handle"></div>
+    <h3><span id="comments-count">0</span> تعليق</h3>
+    <div id="comments-list" class="comments-list"></div>
+    <div class="chat-input-area">
+      <input type="text" id="comment-input" maxlength="200" placeholder="أضف تعليقاً...">
+      <button class="chat-send-btn" id="comment-send-btn">إرسال</button>
+    </div>
+  </div>
+</div>
+
+<!-- 🔗 نافذة المشاركة -->
+<div id="share-modal" class="modal-overlay">
+  <div class="modal-content share-sheet">
+    <h3>مشاركة</h3>
+    <div class="share-grid" id="share-grid"></div>
+    <button class="btn-cancel" id="close-share-btn">إغلاق</button>
+  </div>
+</div>
+
+<!-- 🎁 نافذة الهدايا (30 هدية) -->
+<div id="gifts-modal" class="modal-overlay">
+  <div class="modal-content gifts-sheet">
+    <div class="sheet-handle"></div>
+    <div class="gifts-header">
+      <h3>إرسال هدية</h3>
+      <div class="coin-balance">💰 <span id="gift-coin-balance">0</span></div>
+    </div>
+    <div class="gifts-grid" id="gifts-grid"></div>
+    <button class="btn-cancel" id="close-gifts-btn">إغلاق</button>
+  </div>
+</div>
+
+<!-- 💰 نافذة المحفظة -->
+<div id="wallet-modal" class="modal-overlay">
+  <div class="modal-content">
+    <h3>محفظة العملات</h3>
+    <p class="wallet-balance">💰 <span id="wallet-coin-balance">0</span> عملة</p>
+    <div class="wallet-packs" id="wallet-packs"></div>
+    <button class="btn-cancel" id="close-wallet-btn">إغلاق</button>
+  </div>
+</div>
+
+<!-- 🔑 نافذة تسجيل الدخول -->
+<div id="auth-modal" class="modal-overlay">
+  <div class="modal-content">
+    <h3>مرحباً بك في JIX</h3>
+    <p class="auth-hint">سجّل الدخول برمز يُرسل إلى بريدك الإلكتروني — بدون كلمة مرور تُخزَّن.</p>
+    <div class="input-group"><label>البريد الإلكتروني:</label><input type="email" id="auth-email" maxlength="100"></div>
+    <button class="btn-save" id="auth-send-btn">إرسال رمز الدخول</button>
+    <div class="input-group" id="auth-otp-group" style="display:none;">
+      <label>رمز التحقق:</label><input type="text" id="auth-otp" maxlength="6" inputmode="numeric">
+      <button class="btn-save" id="auth-verify-btn">تأكيد</button>
+    </div>
+    <button class="btn-cancel" id="auth-guest-btn">المتابعة كضيف (وضع تجريبي محلي)</button>
+  </div>
+</div>
+
+<!-- 📱 شريط التنقل -->
+<div class="bottom-nav">
+  <div class="nav-item active" id="nav-home" data-tab="home"><div class="nav-icon">🏠</div><span>الرئيسية</span></div>
+  <div class="nav-item" id="nav-discover" data-tab="discover"><div class="nav-icon">🔍</div><span>اكتشف</span></div>
+  <div class="nav-item" id="nav-upload" data-tab="upload"><div class="upload-btn">+</div></div>
+  <div class="nav-item" id="nav-inbox" data-tab="inbox"><div class="nav-icon">📥</div><span id="inbox-badge-wrap">الرسائل<span id="inbox-badge" class="badge" style="display:none;"></span></span></div>
+  <div class="nav-item" id="nav-profile" data-tab="profile"><div class="nav-icon">👤</div><span>حسابي</span></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+<script src="live-config.js" defer></script>
+<script src="security.js" defer></script>
+<script src="gifts-data.js" defer></script>
+<script src="app.js" defer></script>
+</body>
+</html>
