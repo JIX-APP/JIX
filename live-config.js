@@ -3,38 +3,20 @@
  * ------------------------------------------------------------------
  * البث الحقيقي بين عدة مستخدمين (أنت تُرسل صوت/فيديو والآخرون يستقبلونه
  * مباشرة) يحتاج بنية وسيطة لتوزيع الوسائط (SFU/RTC) لا يمكن تشغيلها من
- * صفحة ويب وحدها. الخيارات الجاهزة الشائعة:
- *
- *   1) Agora.io      -> https://www.agora.io      (باقة مجانية شهرية)
- *   2) LiveKit Cloud  -> https://livekit.io         (مفتوح المصدر + سحابي)
- *   3) Daily.co       -> https://www.daily.co
- *
- * الخطوات لتفعيل بث حقيقي بين مستخدمين:
- *   1. أنشئ حساب عند أحد المزودين أعلاه واحصل على App ID / API Key.
- *   2. ضع القيم بالأسفل في LIVE_PROVIDER_CONFIG.
- *   3. حمّل SDK المزوّد بوسم <script> داخل index.html (راجع تعليق المزوّد).
- *   4. نفّذ دوال connect/publish/subscribe داخل JixLive.provider حسب
- *      توثيق ذلك المزوّد الرسمي (لكل مزوّد واجهة برمجية مختلفة).
- *
- * ⚠️ لا تضع مفاتيح سرّية (Secret/API Secret) هنا أبداً — هذا كود يعمل
- * بمتصفح المستخدم ومرئي للجميع. أي توليد لتوكن دخول للبث (Token) يجب أن
- * يتم من خادم خلفي (Edge Function في Supabase مثلاً) وليس من المتصفح.
- *
- * حتى يتم ربط مزوّد، يعمل التطبيق بوضع "معاينة محلية": يعرض كاميرا/مايك
- * الجهاز نفسه فعلياً (تجربة واجهة حقيقية للمُذيع)، لكن بدون بث للمشاهدين
- * الآخرين عبر الشبكة.
+ * صفحة ويب وحدها.
  */
 
 const LIVE_PROVIDER_CONFIG = {
-  provider: 'none',        // غيّرها إلى 'agora' أو 'livekit' بعد التجهيز
-  appId: '',                // App ID / API Key العام فقط (غير السرّي)
-  tokenEndpoint: '',        // رابط خادمك الخلفي الذي يولّد توكن دخول آمن
+  provider: 'livekit',                                            // تم التفعيل لـ LiveKit
+  appId: 'APIRKJs2kcVFnLd',                                        // الـ API Key الخاص بك
+  tokenEndpoint: 'wss://jix-live-w9kvkmoe.livekit.cloud',         // رابط خادم البث الخاص بك
 };
 
 const JixLive = (() => {
   let localStream = null;
+  let activeRoom = null; // لتخزين الغرفة المفتوحة حالياً للتمكن من فصلها لاحقاً
 
-  const isConfigured = () => LIVE_PROVIDER_CONFIG.provider !== 'none' && !!LIVE_PROVIDER_CONFIG.appId;
+  const isConfigured = () => LIVE_PROVIDER_CONFIG.provider === 'livekit' && !!LIVE_PROVIDER_CONFIG.tokenEndpoint;
 
   async function startLocalPreview(videoEl, mode) {
     const constraints = mode === 'audio'
@@ -55,25 +37,59 @@ const JixLive = (() => {
   }
 
   /**
-   * نقطة الدخول لبدء بث حقيقي بين مستخدمين. إن لم يُضبط مزوّد بعد،
-   * نستخدم المعاينة المحلية ونُعلم الواجهة بذلك بوضوح (بدون خداع المستخدم).
+   * نقطة الدخول لبدء بث حقيقي بين مستخدمين عبر LiveKit Cloud.
    */
   async function start(videoEl, mode, roomName) {
+    // 1. تفعيل الكاميرا والمايك محلياً أولاً
     await startLocalPreview(videoEl, mode);
+    
+    // 2. التحقق من ضبط الإعدادات
     if (!isConfigured()) {
       return { broadcasting: false, reason: 'no_provider' };
     }
-    // TODO: عند ضبط LIVE_PROVIDER_CONFIG، نفّذ هنا نداء SDK المزوّد الفعلي:
-    // مثال عام (يختلف بالتفصيل حسب كل مزوّد):
-    //   const token = await fetch(LIVE_PROVIDER_CONFIG.tokenEndpoint + '?room=' + roomName).then(r => r.json());
-    //   await provider.connect(LIVE_PROVIDER_CONFIG.appId, token, roomName);
-    //   await provider.publish(localStream);
-    return { broadcasting: false, reason: 'not_implemented' };
+
+    try {
+      // 3. تجهيز بيانات الغرفة واسم عشوائي للمشترك لتجنب التداخل
+      const targetRoom = roomName || "jix-main-room";
+      const participantName = "user_" + Math.floor(Math.random() * 1000);
+
+      // 4. توليد توكن الدخول الآمن مباشرة عبر لوحة تحكم LiveKit السحابية الخاصة بك
+      const cleanUrl = LIVE_PROVIDER_CONFIG.tokenEndpoint.replace('wss://', '');
+      const tokenUrl = `https://${cleanUrl}/api/token?room=${targetRoom}&identity=${participantName}`;
+      
+      const token = await fetch(tokenUrl).then(res => res.json()).then(data => data.token || data);
+
+      // 5. إنشاء اتصال حقيقي بالغرفة وبدء البث الحركي
+      if (typeof LiveKit === 'undefined') {
+        console.error("LiveKit SDK غير محملة في صفحة index.html");
+        return { broadcasting: false, reason: 'sdk_missing' };
+      }
+
+      activeRoom = new LiveKit.Room();
+      await activeRoom.connect(LIVE_PROVIDER_CONFIG.tokenEndpoint, token);
+
+      // 6. مشاركة الصوت والصورة مع بقية المتواجدين في الغرفة
+      if (localStream) {
+        if (mode !== 'audio') {
+          await activeRoom.localParticipant.setCameraEnabled(true);
+        }
+        await activeRoom.localParticipant.setMicrophoneEnabled(true);
+      }
+
+      return { broadcasting: true, roomInstance: activeRoom };
+    } catch (error) {
+      console.error("خطأ أثناء الاتصال بـ LiveKit:", error);
+      return { broadcasting: false, reason: 'connection_failed', error: error.message };
+    }
   }
 
   function stop() {
     stopLocalPreview();
-    // TODO: عند وجود مزوّد فعلي، افصل الغرفة هنا: provider.disconnect();
+    // 7. إنهاء البث وفصل الغرفة فوراً عند الضغط على إغلاق
+    if (activeRoom) {
+      activeRoom.disconnect();
+      activeRoom = null;
+    }
   }
 
   return { start, stop, isConfigured };
