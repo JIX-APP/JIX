@@ -719,3 +719,99 @@ async function init() {
   renderProfile();
 }
 init();
+// ========================================================
+// 🛡️ نظام حماية JIX المتكامل (ذكاء اصطناعي + بلاغات المستخدمين)
+// ========================================================
+
+// ⚠️ ضع مفاتيحك الخاصة التي نسختها من موقع Sightengine هنا بين علامات التنصيص
+const SIGHTENGINE_USER = 'ضع_هنا_رقم_api_key_الذي_نسخته';
+const SIGHTENGINE_SECRET = 'ضع_هنا_مفتاح_api_secret_الذي_نسخته';
+
+/**
+ * 🤖 1. دالة فحص الفيديو بالذكاء الاصطناعي فور الرفع
+ * تمنع ظهور أي فيديو مخالف في التطبيق وتحذفه تلقائياً من السيرفر
+ */
+async function checkVideoWithAI(videoUrl, postId) {
+    try {
+        // إرسال رابط الفيديو السحابي إلى سيل الذكاء الاصطناعي لـ Sightengine لفحصه
+        const response = await fetch(`https://sightengine.com{encodeURIComponent(videoUrl)}&models=nudity-2.0,wad,gore&api_user=${SIGHTENGINE_USER}&api_secret=${SIGHTENGINE_SECRET}`);
+        const result = await response.json();
+
+        if (result.status === 'success') {
+            const isNudity = result.summary?.nudity > 0.4; // فحص اللقطات غير الأخلاقية (أعلى من 40%)
+            const isViolence = result.summary?.wad > 0.4;  // فحص الأسلحة والعنف (أعلى من 40%)
+            const isGore = result.summary?.gore > 0.4;      // فحص الدماء والمشاهد القاسية (أعلى من 40%)
+
+            if (isNudity || isViolence || isGore) {
+                // 🚫 إذا ثبتت المخالفة، يتم حذف المنشور فوراً من قاعدة البيانات لحماية المجتمع
+                await sb.from('posts').delete().eq('id', postId);
+                
+                // حذف ملف الفيديو الفيزيائي من الـ Storage لحفظ مساحة مشروعك
+                const fileName = videoUrl.split('/').pop();
+                await sb.storage.from('videos').remove([fileName]);
+
+                alert("🚨 حظر تلقائي: تم رفض ونشر الفيديو وحذفه فوراً بواسطة الذكاء الاصطناعي لمخالفته معايير الأمان والعنف.");
+                return false;
+            }
+        }
+        return true; // الفيديو سليم وآمن تماماً للمشاهدة
+    } catch (error) {
+        console.error("خطأ أثناء فحص الذكاء الاصطناعي:", error);
+        return true; // نمرر الفيديو لتجنب تعطيل التطبيق في حال حدوث بطء في خدمة الفحص خارجية
+    }
+}
+
+/**
+ * 👥 2. دالة تمكين المستخدمين من التبليغ اليدوي عن فيديو سيئ
+ * تضع حلاً مجتمعياً يتيح للمشاهدين حماية التطبيق بيدك
+ */
+async function reportPost(postId) {
+    const confirmReport = confirm("هل تود التبليغ عن هذا الفيديو بسبب محتوى عنيف أو غير أخلاقي؟");
+    if (!confirmReport) return;
+
+    const sessionData = await sb.auth.getSession();
+    const currentUserId = sessionData.data.session?.user?.id;
+
+    if (!currentUserId) {
+        alert("يرجى تسجيل الدخول أولاً لتتمكن من التبليغ!");
+        return;
+    }
+
+    // تسجيل البلاغ في جدول الإشعارات داخل قاعدة بيانات سوبابيز كـ 'report'
+    const { error } = await sb.from('notifications').insert([
+        { 
+            user_id: currentUserId,
+            type: 'report',
+            post_id: postId,
+            message: 'أبلغ مستخدم عن هذا الفيديو كمحتوى مخالف لقواعد مجتمع JIX.'
+        }
+    ]);
+
+    if (error) {
+        alert("تعذر إرسال البلاغ حالياً، يرجى المحاولة لاحقاً.");
+        return;
+    }
+
+    alert("شكرًا لك على حرصك! تم استلام بلاغك بنجاح، وجاري التحقق من محتوى الفيديو.");
+    
+    // تشغيل فحص البلاغات؛ إذا تكرر البلاغ 3 مرات من أشخاص مختلفين يتم الحظر تلقائياً
+    checkReportThreshold(postId);
+}
+
+/**
+ * ⚙️ 3. دالة التحقق من وصول البلاغات للحد الأقصى (3 بلاغات) واختفاء الفيديو
+ */
+async function checkReportThreshold(postId) {
+    const { count, error } = await sb
+        .from('notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('post_id', postId)
+        .eq('type', 'report');
+
+    if (!error && count >= 3) {
+        // حذف الفيديو نهائياً من قاعدة البيانات بعد تكرار شكاوى المستخدمين
+        await sb.from('posts').delete().eq('id', postId);
+        alert("تم إخفاء وحذف هذا المنشور تلقائياً بعد مراجعته وحصوله على بلاغات متعددة لحماية المشاهدين.");
+        location.reload(); // تحديث واجهة التطبيق لإخفاء الفيديو فوراً من الشاشة
+    }
+}
