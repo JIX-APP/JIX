@@ -724,8 +724,8 @@ init();
 // ========================================================
 
 // ⚠️ ضع مفاتيحك الخاصة التي نسختها من موقع Sightengine هنا بين علامات التنصيص
-const SIGHTENGINE_USER = 'ضع_هنا_رقم_api_key_الذي_نسخته';
-const SIGHTENGINE_SECRET = 'ضع_هنا_مفتاح_api_secret_الذي_نسخته';
+const SIGHTENGINE_USER = '478295387';
+const SIGHTENGINE_SECRET = 'qDYGumGbULyBrUmaHTMUzRVQWqiizW2J';
 
 /**
  * 🤖 1. دالة فحص الفيديو بالذكاء الاصطناعي فور الرفع
