@@ -206,3 +206,17 @@ video { width: 100%; height: 100%; object-fit: cover; background: #050506; }
 @media (prefers-reduced-motion: reduce) {
   .heart-pop, .gift-fx, .toast { animation: none !important; transition: none !important; }
 }
+/* 🔥 إجبار أزرار تسجيل الدخول والخروج على الظهور والتنسيق فوق الخلفية الداكنة */
+#login-trigger-btn, #logout-trigger-btn {
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    padding: 10px 20px;
+    margin: 5px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    border: none;
+    z-index: 9999 !important;
+}
