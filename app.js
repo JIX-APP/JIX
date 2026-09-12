@@ -789,3 +789,74 @@ async function reportPost(postId) {
 // تصدير الدوال للنافذة العامة لضمان عملها مع ملف الـ HTML والأزرار الأصلية
 window.reportPost = reportPost;
 window.checkVideoWithAI = checkVideoWithAI;
+// ========================================================
+// 🔐 تشغيل وتنشيط أزرار تسجيل الدخول والخروج في JIX
+// ========================================================
+
+function initAuthButtons() {
+    const loginBtn = document.getElementById('login-trigger-btn');
+    const logoutBtn = document.getElementById('logout-trigger-btn');
+
+    // 1. عند الضغط على زر تسجيل الدخول: يتم إظهار نافذة إدخال البريد الإلكتروني والـ OTP
+    if (loginBtn) {
+        loginBtn.addEventListener('click', () => {
+            const authSection = document.getElementById('auth-modal') || document.getElementById('auth-section');
+            if (authSection) {
+                authSection.style.display = 'block';
+                authSection.classList.add('active');
+                alert("🔐 يرجى كتابة بريدك الإلكتروني الآن لاستقبال رمز الدخول الحقيقي!");
+            } else {
+                const email = prompt("يرجى إدخال بريدك الإلكتروني الحقيقي للتسجيل واستلام الرمز عبر Supabase:");
+                if (email) handleOTPSignIn(email);
+            }
+        });
+    }
+
+    // 2. عند الضغط على زر تسجيل الخروج: يتم مسح الجلسة والعودة كـ ضيف
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', async () => {
+            const confirmLogout = confirm("هل أنت متأكد من رغبتك في تسجيل الخروج؟");
+            if (!confirmLogout) return;
+
+            if (window.sb) {
+                await window.sb.auth.signOut();
+                alert("🚪 تم تسجيل الخروج بنجاح وعودتك كحساب ضيف آمن.");
+                location.reload();
+            }
+        });
+    }
+}
+
+// دالة مساعدة لإرسال الرمز مباشرة عبر سوبابيز
+async function handleOTPSignIn(email) {
+    if (!window.sb) return;
+    const { error } = await window.sb.auth.signInWithOtp({
+        email: email,
+        options: { emailRedirectTo: window.location.href }
+    });
+    if (error) {
+        alert("حدث خطأ أثناء إرسال الرمز: " + error.message);
+    } else {
+        alert("🚀 تم إرسال الرمز السري بنجاح! تحقق من بريدك الإلكتروني (صندوق الوارد أو الـ Spam).");
+        const otpToken = prompt("أدخل رمز التحقق (OTP) المكون من 6 أرقام هنا للدخول لحسابك الموثق:");
+        if (otpToken) {
+            const { error: verifyError } = await window.sb.auth.verifyOtp({ email, token: otpToken, type: 'signup' });
+            if (!verifyError) {
+                alert("🎉 مبروك! تم تفعيل حسابك الحقيقي ودخول المنصة بنجاح!");
+                location.reload();
+            } else {
+                alert("الرمز غير صحيح، يرجى المحاولة مجدداً.");
+            }
+        }
+    }
+}
+
+// تشغيل الأزرار تلقائياً فور جاهزية الصفحة
+document.addEventListener('DOMContentLoaded', initAuthButtons);
+if (typeof window.init === 'function') {
+    const originalInit = window.init;
+    window.init = async function() {
+        await originalInit();
+        initAuthButtons();
+    };
+}
