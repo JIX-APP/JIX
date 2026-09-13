@@ -22,7 +22,7 @@ const JIX_GIFTS = [
 
   // فئة 3: هدايا كبرى مخصصة للداعمين (Tier 3)
   { id: 'diamond', name: 'ألماسة', icon: '💎', price: 100, tier: 3 },
-  { id: 'rainbow', name: 'قوس قزح', icon: '🌈', price: 150, tier: 3 },
+  { id: 'music_note', name: 'صوت الموسيقى', icon: '🎵✨', price: 150, tier: 3 }, // 🌟 التعديل هنا بدلاً من قوس قزح
   { id: 'rocket', name: 'صاروخ', icon: '🚀', price: 200, tier: 3 },
   { id: 'watch', name: 'ساعة فاخرة', icon: '⌚', price: 250, tier: 3 },
   { id: 'trophy', name: 'كأس بطولة', icon: '🏆', price: 350, tier: 3 },
@@ -53,7 +53,6 @@ const JixFX = (() => {
     return ctx;
   }
 
-  // توليد نغمة واحدة قصيرة برمجياً بدون ملفات صوت خارجية
   function tone(ac, freq, start, dur, type, gainPeak) {
     const osc = ac.createOscillator();
     const gain = ac.createGain();
@@ -67,7 +66,6 @@ const JixFX = (() => {
     osc.stop(ac.currentTime + start + dur + 0.05);
   }
 
-  // تفعيل التوقيع الصوتي الخاص بكل فئة من الهدايا (Arpeggio)
   function playGiftSound(gift) {
     try {
       const ac = getCtx();
@@ -81,18 +79,16 @@ const JixFX = (() => {
         tone(ac, freq, i * 0.09, 0.35 + gift.tier * 0.05, type, 0.18);
       }
       
-      // بريق إضافي للهدايا الكبيرة جداً
       if (gift.tier >= 4) {
         for (let i = 0; i < 6; i++) {
           tone(ac, base * (2 + Math.random() * 2), 0.1 + i * 0.05, 0.2, 'sine', 0.06);
         }
       }
     } catch (e) {
-      console.log("الصوت محظور أو غير مدعوم حالياً في المتصفح.");
+      console.log("الصوت محظور أو غير مدعوم.");
     }
   }
 
-  // تأثير بصري: جعل أيقونة الهدية تطفو وتتلاشى فوق شاشة البث المباشر
   function playGiftVisual(container, gift) {
     if (!container) return;
     const el = document.createElement('div');
@@ -111,6 +107,5 @@ const JixFX = (() => {
   return { celebrate, playGiftSound, playGiftVisual };
 })();
 
-// تصدير المصفوفة والكائن للنظام العام لباقي ملفات التطبيق
 window.JIX_GIFTS = JIX_GIFTS;
 window.JixFX = JixFX;
