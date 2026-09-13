@@ -1,13 +1,6 @@
-/*
- * JIX — طبقة الحماية (Security Layer)
- * ------------------------------------------------------------------
- * هذا الملف يطبّق حمايات حقيقية وفعّالة على مستوى الواجهة (Client).
- * ⚠️ ملاحظة مهمة وصادقة: حماية الواجهة وحدها لا تكفي لتطبيق إنتاجي حقيقي.
- * الحماية الكاملة تتطلب أيضاً إجراءات من جهة الخادم/قاعدة البيانات
- * (Row Level Security، مصادقة حقيقية، تحقق من المدفوعات عبر Webhook موقّع...).
- * تلك النقاط موثّقة في README.md ولا يمكن تنفيذها من متصفح المستخدم وحده،
- * لأن أي كود بالمتصفح قابل للتعديل من نفس المستخدم.
- */
+/* ============================================================
+   JIX — طبقة الحماية (Security Layer)
+   ============================================================ */
 
 const JixSecurity = (() => {
 
@@ -19,16 +12,16 @@ const JixSecurity = (() => {
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;')
+      .replace(/'/g, '&#039;')
       .replace(/\//g, '&#x2F;');
   }
 
-  // 2) إزالة محارف التحكم/العرض الخفية التي تُستخدم أحياناً للتحايل أو الهجمات النصية
+  // 2) إزالة محارف التحكم/العرض الخفية التي تُستخدم للتحايل النصي
   function stripControlChars(str) {
     return String(str || '').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u200B-\u200F\u202A-\u202E]/g, '');
   }
 
-  // 3) تقييد الطول دائماً في الكود، وليس فقط عبر maxlength بالـ HTML (القابل للتجاوز بأدوات المطور)
+  // 3) تقييد الطول دائماً في الكود (يمنع تجاوز أداوت المطور)
   function clampLength(str, max) {
     return stripControlChars(str).slice(0, max);
   }
@@ -42,7 +35,7 @@ const JixSecurity = (() => {
     return '';
   }
 
-  // 5) التحقق من البريد الإلكتروني بصيغة محافظة (تمنع حقن رؤوس بريد Header Injection)
+  // 5) التحقق من البريد الإلكتروني بصيغة محافظة
   function isValidEmail(email) {
     return /^[^\s@<>"'\r\n]+@[^\s@<>"'\r\n]+\.[^\s@<>"'\r\n]{2,}$/.test(String(email || '').trim());
   }
@@ -52,17 +45,16 @@ const JixSecurity = (() => {
     return /^[a-z0-9_\u0621-\u064A]{3,20}$/i.test(String(handle || '').trim());
   }
 
-  // 7) توليد معرّفات عشوائية آمنة تعتمد على مولّد عشوائية مشفّر وليس Math.random()
+  // 7) توليد معرّفات عشوائية آمنة تعتمد على مولّد عشوائية مشفّر
   function secureId() {
     const arr = new Uint8Array(16);
     crypto.getRandomValues(arr);
     return Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
   }
 
-  // 8) مُحدِّد معدّل (Rate Limiter) لمنع إساءة الاستخدام: سبام رسائل/تعليقات/هدايا/طلبات بحث
+  // 8) مُحدِّد معدّل (Rate Limiter) لمنع إساءة الاستخدام: سبام تعليقات أو هدايا
   class RateLimiter {
     constructor() { this.hits = new Map(); }
-    /** @returns {boolean} true إذا مسموح بالتنفيذ الآن */
     allow(key, maxCalls, windowMs) {
       const now = Date.now();
       const arr = (this.hits.get(key) || []).filter(t => now - t < windowMs);
@@ -74,7 +66,7 @@ const JixSecurity = (() => {
   }
   const rateLimiter = new RateLimiter();
 
-  // 9) قراءة/كتابة آمنة لـ localStorage (لا تكسر التطبيق إن كان التخزين ممتلئاً أو محظوراً بوضع التصفح الخاص)
+  // 9) قراءة/كتابة آمنة لـ localStorage (لا تكسر التطبيق بالتصفح الخاص)
   const safeStorage = {
     get(key, fallback = null) {
       try { const v = localStorage.getItem('jix:' + key); return v === null ? fallback : JSON.parse(v); }
@@ -87,20 +79,20 @@ const JixSecurity = (() => {
     remove(key) { try { localStorage.removeItem('jix:' + key); } catch (e) {} }
   };
 
-  // 10) منع تضمين الصفحة داخل إطار خارجي (حماية إضافية من Clickjacking تكمل رأس CSP)
+  // 10) منع تضمين الصفحة داخل إطار خارجي (حماية إضافية من Clickjacking)
   function preventFraming() {
     try { if (window.top !== window.self) window.top.location = window.self.location; } catch (e) {}
   }
 
-  // 11) تحقق من صحة كائنات JSON قادمة من الشبكة قبل استخدامها (يمنع كسر التطبيق ببيانات غير متوقعة)
+  // 11) تحقق من صحة كائنات JSON قادمة من الشبكة
   function isPlainObject(v) { return v !== null && typeof v === 'object' && !Array.isArray(v); }
 
-  // 12) قفل الكائنات الأساسية للتطبيق لتقليل خطر Prototype Pollution من مكتبات خارجية
+  // 12) تقليل خطر Prototype Pollution من مكتبات خارجية
   function hardenGlobals() {
     try { Object.freeze(Object.prototype); } catch (e) {}
   }
 
-  // 13) تحقق من أن مبلغ العملات المُدخل رقم صحيح موجب ضمن حد منطقي (حماية أولية من قيم متلاعب بها)
+  // 13) تحقق من أن مبلغ العملات المُدخل رقم صحيح موجب ضمن حد منطقي
   function isValidCoinAmount(n) {
     return Number.isInteger(n) && n > 0 && n <= 1000000;
   }
@@ -112,5 +104,9 @@ const JixSecurity = (() => {
   };
 })();
 
+// تفعيل ميزات الحماية الفورية
 JixSecurity.preventFraming();
 JixSecurity.hardenGlobals();
+
+// تصدير الكائن للنافذة العامة لربطه بملف app.js
+window.JixSecurity = JixSecurity;
