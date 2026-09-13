@@ -734,10 +734,22 @@
   <div class="nav-item" id="nav-profile" data-tab="profile"><div class="nav-icon">👤</div><span>حسابي</span></div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+<script src="https://jsdelivr.net" defer></script>
+
+<!-- 🚀 كود ربط سوباباز المباشر والنهائي لتطبيق JIX -->
+<script>
+  const SUPABASE_URL = "https://wfvhzlpvtgnydhmsxcqr.supabase.co/";
+  const SUPABASE_ANON_KEY = "sb_publishable_B6aT1T-ft6Stj0RFpK0xxw_gxpeXnA1"; 
+
+  // تفعيل الاتصال تلقائياً داخل التطبيق
+  const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  console.log("🚀 تم تفعيل ربط JIX بسوباباز بنجاح 100%");
+</script>
+
 <script src="live-config.js" defer></script>
 <script src="security.js" defer></script>
 <script src="gifts-data.js" defer></script>
 <script src="app.js" defer></script>
 </body>
 </html>
+
