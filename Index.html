@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>JIX</title>
+  <style>
+    :root { --jix-red:#fe2c55; --jix-blue:#25f4ee; --jix-black:#000; --jix-surface:#17171a; --jix-surface-2:#232326; --jix-text-dim:#9a9aa2; --jix-gold:#ffcf4d; }
+    * { box-sizing:border-box; margin:0; padding:0; user-select:none; -webkit-user-select:none; }
+    html, body { background:var(--jix-black); color:#fff; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; overflow:hidden; width:100%; height:100%; }
+    .page { display:none; width:100vw; height:100vh; position:absolute; inset:0; background:var(--jix-black); padding-top:44px; }
+    .page.active { display:block; }
+    .top-header { position:absolute; top:44px; width:100%; display:flex; align-items:center; justify-content:space-between; padding:0 14px; z-index:20; height:40px; }
+    .header-tabs { display:flex; gap:16px; font-size:14px; color:rgba(255,255,255,0.55); }
+    .header-tab.active { color:#fff; font-weight:700; cursor:pointer; }
+    .jix-logo { position:absolute; left:50%; transform:translateX(-50%); font-size:22px; font-weight:900; background:linear-gradient(135deg, var(--jix-red), var(--jix-blue)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+    .app-container { width:100vw; height:calc(100vh - 119px); overflow-y:scroll; scroll-snap-type:y mandatory; }
+    .app-container::-webkit-scrollbar { display:none; }
+    .video-card { width:100vw; height:calc(100vh - 119px); scroll-snap-align:start; position:relative; }
+    video { width:100%; height:100%; object-fit:cover; }
+    .side-bar { position:absolute; bottom:30px; left:12px; display:flex; flex-direction:column; gap:18px; z-index:10; }
+    .action-button { display:flex; flex-direction:column; align-items:center; font-size:12px; cursor:pointer; }
+    .action-button .icon { width:44px; height:44px; background:rgba(255,255,255,0.12); backdrop-filter:blur(6px); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:21px; margin-bottom:4px; }
+    .video-details { position:absolute; bottom:16px; right:14px; left:76px; z-index:10; text-align:right; }
+    .username { font-weight:700; font-size:15px; margin-bottom:6px; }
+    .username::before { content:'@'; }
+    .description { font-size:13.5px; opacity:0.95; }
+    .bottom-nav { position:fixed; bottom:0; left:0; width:100vw; height:75px; background:rgba(5,5,6,0.97); border-top:0.5px solid rgba(255,255,255,0.08); display:flex; justify-content:space-around; align-items:center; padding-bottom:14px; z-index:99; }
+    .nav-item { display:flex; flex-direction:column; align-items:center; font-size:10px; color:#8a8a8f; cursor:pointer; }
+    .nav-item.active { color:#fff; }
+    .nav-icon { font-size:20px; margin-bottom:2px; }
+    .upload-btn { width:46px; height:30px; background:#fff; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#000; font-size:18px; font-weight:800; }
+    .discover-scroll, .scroll-panel, .chat-box { height:calc(100vh - 150px); overflow-y:auto; padding:15px; }
+    .trending-item, .challenge-item, .suggested-item { display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:0.5px solid var(--jix-surface-2); }
+    .chat-input-area { display:flex; gap:10px; padding:10px; border-top:0.5px solid var(--jix-surface-2); }
+    .chat-input-area input { flex:1; background:var(--jix-surface); border:1px solid var(--jix-surface-2); border-radius:20px; padding:0 15px; height:40px; color:#fff; outline:none; }
+    .chat-send-btn { background:var(--jix-blue); color:#000; border:none; padding:0 15px; border-radius:20px; font-weight:700; cursor:pointer; }
+    .message-bubble { background:var(--jix-surface); padding:10px 14px; border-radius:14px; max-width:75%; align-self:flex-start; margin-bottom:8px; }
+    .message-bubble.my-msg { background:linear-gradient(135deg, var(--jix-red), #ff5470); align-self:flex-end; margin-left:auto; }
+    .profile-header { display:flex; flex-direction:column; align-items:center; padding:22px; border-bottom:1px solid var(--jix-surface-2); }
+    .profile-pic { width:92px; height:92px; border-radius:50%; background:var(--jix-surface-2); display:flex; align-items:center; justify-content:center; font-size:40px; margin-bottom:12px; border:2px solid var(--jix-red); }
+    .profile-stats { display:flex; gap:22px; margin:16px 0; }
+    .profile-actions { display:flex; gap:10px; }
+    .edit-profile-btn { background:var(--jix-surface); color:#fff; border:1px solid var(--jix-surface-2); padding:9px 22px; border-radius:6px; font-size:13px; font-weight:700; cursor:pointer; }
+    .live-room { position:relative; width:100vw; height:100vh; background:#000; }
+    .live-top-bar { position:absolute; top:50px; left:0; right:0; display:flex; align-items:center; justify-content:space-between; padding:0 14px; z-index:20; }
+    .live-badge { background:var(--jix-red); font-size:11px; font-weight:800; padding:4px 10px; border-radius:5px; }
+    .live-bottom-bar { position:absolute; bottom:20px; left:0; right:0; display:flex; gap:10px; padding:0 14px; z-index:20; }
+    .live-gift-btn { width:40px; height:40px; border-radius:50%; border:none; background:linear-gradient(135deg, var(--jix-gold), #ff9d4d); font-size:18px; cursor:pointer; }
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:100; align-items:center; justify-content:center; }
+    .modal-overlay.open { display:flex; }
+    .modal-content { background:var(--jix-surface); width:85%; max-width:360px; padding:20px; border-radius:14px; text-align:center; }
+    .gifts-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; max-height:200px; overflow-y:auto; }
+    .gift-item { background:var(--jix-surface-2); border:1px solid var(--jix-surface); border-radius:10px; padding:10px 4px; display:flex; flex-direction:column; align-items:center; cursor:pointer; }
+    .gift-fx { position:absolute; bottom:40%; font-size:40px; animation:giftFloat 2s ease-out forwards; pointer-events:none; z-index:99; }
+    @keyframes giftFloat { 0%{ transform:translateY(0) scale(0.5); opacity:0;} 15%{ opacity:1; transform:translateY(-10px) scale(1);} 100%{ transform:translateY(-200px) scale(1.2); opacity:0;} }
+    #toast-container { position:fixed; top:50px; left:50%; transform:translateX(-50%); z-index:200; }
+    .toast { background:var(--jix-surface-2); border:1px solid rgba(255,255,255,0.1); padding:10px 18px; border-radius:20px; font-size:13px; display:none; }
+  </style>
+</head>
+<body>
+<div id="toast-container"><div id="main-toast" class="toast"></div></div>
+<div id="home-page" class="page active">
+  <div class="top-header">
+    <div class="header-icon" onclick="goToTab('live')">🔴 بث مباشر</div>
+    <div class="header-tabs"><span class="header-tab active">لك</span></div>
+    <div class="jix-logo">JIX</div>
+  </div>
+  <div class="app-container" id="jix-feed"></div>
+</div>
+<div id="discover-page" class="page">
+  <div class="page-title">اكتشف</div>
+  <div class="discover-scroll">
+    <div class="trending-section">
+      <div class="trending-title" style="color:var(--jix-red); font-weight:700; margin-bottom:10px;">🔥 الهاشتاقات الرائجة</div>
+      <div id="trending-list"></div>
+    </div>
+  </div>
+</div>
+<div id="upload-page" class="page">
+  <div class="page-title">إنشاء فيديو</div>
+  <div class="upload-container">
+    <div style="font-size:50px; margin-bottom:15px;">📹</div>
+    <p style="color:var(--jix-text-dim); margin-bottom:20px;">الوضع التجريبي نشط - اضغط لنشر فيديو محاكاة</p>
+    <button class="upload-select-btn" onclick="publishDemoVideo()">🚀 نشر فيديو تجريبي تلقائي</button>
+  </div>
+</div>
+<div id="inbox-page" class="page">
+  <div class="page-title">الدردشة العامة</div>
+  <div class="chat-box" id="chat-messages-container" style="display:flex; flex-direction:column;"></div>
+  <div class="chat-input-area">
+    <input type="text" id="chat-input-field" placeholder="اكتب رسالة للجميع...">
+    <button class="chat-send-btn" onclick="sendGroupMessage()">إرسال</button>
+  </div>
+</div>
+<div id="profile-page" class="page">
+  <div class="profile-header">
+    <div class="profile-pic">👤</div>
+    <div class="profile-username" id="display-name">مالك JIX</div>
+    <div class="profile-handle">@jix_owner</div>
+    <div class="profile-stats">
+      <div class="stat-item"><strong id="stat-coins">500</strong><span>💰 عملة</span></div>
+    </div>
+    <div class="profile-actions">
+      <button class="edit-profile-btn" onclick="toast('ميزة التعديل ستتوفر في التحديث القادم')">تعديل الحساب</button>
+    </div>
+  </div>
+</div>
+<div id="live-page" class="page">
+  <div class="live-room">
+    <div class="live-top-bar">
+      <div class="live-badge">🔴 مباشر</div>
+      <div style="cursor:pointer; background:rgba(0,0,0,0.6); padding:5px 12px; border-radius:12px;" onclick="goToTab('home')">إغلاق</div>
+    </div>
+    <div id="live-gift-feed" style="position:absolute; bottom:100px; right:15px; z-index:10; display:flex; flex-direction:column; gap:5px;"></div>
+    <div class="live-bottom-bar">
+      <input type="text" placeholder="علّق على البث..." style="flex:1; background:rgba(255,255,255,0.15); border:none; padding:10px; border-radius:20px; color:#fff; outline:none;">
+      <button class="live-gift-btn" onclick="openGiftsModal()">🎁</button>
+    </div>
+  </div>
+</div>
+<div id="gifts-modal" class="modal-overlay" onclick="closeGiftsModal(event)">
+  <div class="modal-content">
+    <h3 style="margin-bottom:15px;">إرسال هدية (رصيدك: <span id="gift-balance">500</span> 💰)</h3>
+    <div class="gifts-grid" id="gifts-grid"></div>
+  </div>
+</div>
+<div class="bottom-nav">
+  <div class="nav-item active" id="nav-home" onclick="goToTab('home')"><div class="nav-icon">🏠</div><span>الرئيسية</span></div>
+  <div class="nav-item" id="nav-discover" onclick="goToTab('discover')"><div class="nav-icon">🔍</div><span>اكتشف</span></div>
+  <div class="nav-item" id="nav-upload" onclick="goToTab('upload')"><div class="upload-btn">+</div></div>
+  <div class="nav-item" id="nav-inbox" onclick="goToTab('inbox')"><div class="nav-icon">📥</div><span>الرسائل</span></div>
+  <div class="nav-item" id="nav-profile" onclick="goToTab('profile')"><div class="nav-icon">👤</div><span>حسابي</span></div>
+</div>
+<script>
+  let userCoins = 500;
+  const DEMO_VIDEOS = ['https://googleapis.com'];
+  let posts = [{ id: 1, user: 'jix_official', caption: 'مرحباً بك في تطبيق JIX المطور بالكامل! 🚀 #JIX_App', video: DEMO_VIDEOS }];
+  const JIX_GIFTS = [
+    { id:'rose', name:'وردة', icon:'🌹', price:1 }, { id:'heart', name:'قلب', icon:'❤️', price:5 },
+    { id:'star', name:'نجمة', icon:'⭐', price:10 }, { id:'balloon', name:'بالون', icon:'🎈', price:15 },
+    { id:'mic', name:'مايك', icon:'🎤', price:40 }, { id:'crown', name:'تاج', icon:'👑', price:50 },
+    { id:'diamond', name:'ألماسة', icon:'💎', price:100 }, { id:'music', name:'موسيقى', icon:'🎵✨', price:150 },
+    { id:'rocket', name:'صاروخ', icon:'🚀', price:200 }, { id:'car', name:'سيارة', icon:'🚗', price:800 },
+    { id:'castle', name:'قلعة', icon:'🏰', price:1500 }, { id:'jix_crown', name:'تاج الملك', icon:'👑✨', price:9999 }
+  ];
+  function renderFeed() {
+    document.getElementById('jix-feed').innerHTML = posts.map(p => `
+      <div class="video-card"><video src="${p.video}" loop autoplay muted playsinline></video>
+      <div class="side-bar"><div class="action-button"><div class="icon">❤️</div><span>1.4K</span></div></div>
+      <div class="video-details"><div class="username">${p.user}</div><div class="description">${p.caption}</div></div></div>
+    `).join('');
+  }
+  function goToTab(tab) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById(`${tab}-page`).classList.add('active');
+    document.getElementById(`nav-${tab}`)?.classList.add('active');
+    if(tab === 'discover') document.getElementById('trending-list').innerHTML = JIX_GIFTS.map(g => `<div class="trending-item"><span>#JIX_${g.id}</span><strong>1.2M</strong></div>`).join('');
+  }
+  function toast(msg) { const t = document.getElementById('main-toast'); t.style.display = 'block'; t.textContent = msg; setTimeout(() => t.style.display = 'none', 2000); }
+  function publishDemoVideo() { posts.unshift({ id: Date.now(), user: 'jix_owner', caption: 'فيديو تجريبي جديد! 🎉 #ترند', video: DEMO_VIDEOS }); toast('تم النشر بنجاح! 🎉'); renderFeed(); goToTab('home'); }
+  function sendGroupMessage() { const input = document.getElementById('chat-input-field'); if(!input.value.trim()) return; const box = document.getElementById('chat-messages-container'); box.innerHTML += `<div class="message-bubble my-msg"><div class="msg-text">${input.value}</div></div>`; input.value = ''; box.scrollTop = box.scrollHeight; }
+  function openGiftsModal() { document.getElementById('gift-balance').textContent = userCoins; const grid = document.getElementById('gifts-grid'); grid.innerHTML = JIX_GIFTS.map(g => `<div class="gift-item" onclick="sendGift('${g.id}')"><div style="font-size:24px;">${g.icon}</div><div style="font-size:11px;">${g.name}</div><div style="font-size:10px; color:var(--jix-gold);">💰 ${g.price}</div></div>`).join(''); document.getElementById('gifts-modal').classList.add('open'); }
+  function closeGiftsModal(e) { if(e.target.classList.contains('modal-overlay')) document.getElementById('gifts-modal').classList.remove('open'); }
+  function sendGift(giftId) { const gift = JIX_GIFTS.find(g => g.id === giftId); if(userCoins < gift.price) { toast('رصيدك غير كافٍ!'); return; } userCoins -= gift.price; document.getElementById('stat-coins').textContent = userCoins; document.getElementById('gift-balance').textContent = userCoins; const room = document.querySelector('.live-room'); const fx = document.createElement('div'); fx.className = 'gift-fx'; fx.textContent = gift.icon; fx.style.left = Math.floor(Math.random() * 50 + 25) + '%'; room.appendChild(fx); setTimeout(() => fx.remove(), 2000); const log = document.getElementById('live-gift-feed'); log.innerHTML += `<div class="gift-log-row">أرسل @jix_owner هدية ${gift.name} ${gift.icon}</div>`; document.getElementById('gifts-modal').classList.remove('open'); toast(`تم إرسال ${gift.name} 🎁`); }
+  window.onload = () => { renderFeed(); };
+</script>
+</body>
+</html>
