@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>JIX</title>
+<meta name="description" content="تطبيق JIX - منصة متطورة تجمع بين تيك توك وإنستغرام (قصص Stories، ريلز Reels، محادثات خاصة DMs، وشبكة استكشاف)">
+<meta property="og:title" content="JIX">
+<meta property="og:description" content="تطبيق JIX - منصة متطورة تجمع بين تيك توك وإنستغرام (قصص Stories، ريلز Reels، محادثات خاصة DMs، وشبكة استكشاف)">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -14,23 +17,59 @@
 <!-- 1️⃣ الرئيسية / الفيديوهات -->
 <div id="home-page" class="page active">
   <div class="top-header">
+    <div class="header-left">
+      <div class="header-icon" id="live-shortcut" title="البث المباشر">🔴</div>
+      <div class="header-icon" id="dm-shortcut" title="المحادثات الخاصة DMs">
+        ✈️<span class="dm-badge" id="header-dm-badge" style="display:none;">1</span>
+      </div>
+    </div>
     <div class="header-tabs">
+      <span class="header-tab" data-feed="stories">القصص</span>
       <span class="header-tab" data-feed="following">أتابعهم</span>
       <span class="header-tab active" data-feed="foryou">لك</span>
     </div>
     <div class="jix-logo">JIX</div>
-    <div class="header-icon" id="live-shortcut" title="البث المباشر">🔴</div>
   </div>
+
+  <!-- 🌟 شريط قصص إنستغرام (Instagram Stories Bar) -->
+  <div class="stories-bar" id="stories-bar">
+    <div class="stories-track" id="stories-track"></div>
+  </div>
+
   <div class="app-container" id="jix-feed"></div>
 </div>
 
-<!-- 2️⃣ اكتشف -->
+<!-- 2️⃣ اكتشف (نمط Instagram Explore Grid) -->
 <div id="discover-page" class="page">
-  <div class="page-title">اكتشف</div>
-  <div class="search-box">
-    <input type="text" id="search-input" maxlength="60" placeholder="ابحث عن مستخدمين أو هاشتاق...">
+  <div class="discover-top-bar">
+    <div class="page-title" style="text-align: right; padding: 4px 14px 2px;">اكتشف</div>
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="search-input" maxlength="60" placeholder="ابحث عن مستخدمين، هاشتاقات، أو فيديوهات...">
+    </div>
   </div>
+
+  <!-- تصنيفات إنستغرام الأفقية -->
+  <div class="explore-categories-bar" id="explore-categories-bar">
+    <span class="cat-pill active" data-cat="all">✨ الكل</span>
+    <span class="cat-pill" data-cat="reels">🎬 ريلز</span>
+    <span class="cat-pill" data-cat="trending">🔥 ترند</span>
+    <span class="cat-pill" data-cat="music">🎵 موسيقى</span>
+    <span class="cat-pill" data-cat="sports">⚽ رياضة</span>
+    <span class="cat-pill" data-cat="travel">✈️ سياحة</span>
+    <span class="cat-pill" data-cat="tech">💻 تقنية</span>
+  </div>
+
   <div class="discover-scroll">
+    <!-- شبكة استكشاف إنستغرام المربعة 3x3 -->
+    <div class="explore-section">
+      <div class="section-header-row">
+        <span class="section-title">🌟 استكشف الريلز والمنشورات</span>
+        <span class="section-subtitle">شائع اليوم</span>
+      </div>
+      <div class="explore-grid" id="explore-media-grid"></div>
+    </div>
+
     <div class="trending-section">
       <div class="trending-title">🔥 الهاشتاقات الرائجة</div>
       <div id="trending-list"></div>
@@ -52,41 +91,76 @@
   <div class="page-title">إنشاء فيديو</div>
   <div class="upload-container" id="upload-empty">
     <div class="upload-icon">📹</div>
-    <p>اختر فيديو من جهازك لبدء النشر</p>
+    <p>اختر فيديو من جهازك أو سجّل مقطعاً جديداً لنشره على JIX</p>
     <input type="file" id="video-picker" accept="video/*" style="display:none;">
-    <button class="upload-select-btn" id="open-picker-btn">فتح المعرض</button>
+    <div class="upload-actions-group">
+      <button class="upload-select-btn" id="open-picker-btn">📁 اختيار من المعرض</button>
+      <button class="upload-select-btn upload-camera-btn" id="open-camera-btn">🔴 تصوير مباشر بالكاميرا</button>
+    </div>
   </div>
+
+  <!-- واجهة تصوير الكاميرا المباشرة -->
+  <div id="camera-record-view" class="camera-record-container" style="display: none;">
+    <video id="camera-stream-video" autoplay muted playsinline></video>
+    <div class="camera-top-controls">
+      <button class="cam-btn" id="cam-close-btn" title="إغلاق">✕</button>
+      <span class="cam-timer" id="cam-timer-badge">00:00</span>
+      <button class="cam-btn" id="cam-flip-btn" title="قلب الكاميرا">🔄</button>
+    </div>
+    <div class="camera-bottom-controls">
+      <div class="record-ring" id="record-action-btn" title="بدء التسجيل">
+        <div class="record-core" id="record-core-indicator"></div>
+      </div>
+      <div class="record-hint" id="record-hint-text">اضغط للتسجيل (حتى 30 ثانية)</div>
+    </div>
+  </div>
+
   <div class="upload-editor" id="upload-editor" style="display:none;">
-    <video id="upload-preview" muted playsinline></video>
+    <div class="preview-wrap">
+      <video id="upload-preview" muted playsinline loop></video>
+    </div>
     <div class="upload-form">
-      <textarea id="upload-caption" maxlength="150" placeholder="اكتب وصفاً... استخدم # للهاشتاق"></textarea>
+      <textarea id="upload-caption" maxlength="150" placeholder="اكتب وصفاً جذاباً لمقطعك..."></textarea>
+      
+      <!-- هاشتاقات مقترحة سريعة -->
+      <div class="quick-tags-wrap">
+        <span class="quick-tag-label">هاشتاقات سريعة بنقرة واحدة:</span>
+        <div class="quick-tags-list">
+          <span class="tag-pill" data-tag="#JIX_App">#JIX_App</span>
+          <span class="tag-pill" data-tag="#فيديو_اليوم">#فيديو_اليوم</span>
+          <span class="tag-pill" data-tag="#تحدي_الصيف">#تحدي_الصيف</span>
+          <span class="tag-pill" data-tag="#مواهب">#مواهب</span>
+          <span class="tag-pill" data-tag="#ترند">#ترند</span>
+        </div>
+      </div>
+
       <div class="upload-row">
         <label class="switch-row"><span>السماح بالتعليقات</span><input type="checkbox" id="allow-comments" checked></label>
         <label class="switch-row"><span>السماح بالمشاركة</span><input type="checkbox" id="allow-share" checked></label>
       </div>
       <div class="upload-actions">
         <button class="btn-cancel" id="discard-upload-btn">إلغاء</button>
-        <button class="btn-save" id="publish-btn">نشر</button>
+        <button class="btn-save" id="publish-btn">نشر المقطع 🚀</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- 4️⃣ الرسائل: محادثات + دردشة جماعية + إشعارات -->
+<!-- 4️⃣ الرسائل: محادثات DMs + دردشة جماعية + إشعارات -->
 <div id="inbox-page" class="page">
-  <div class="page-title">الرسائل</div>
+  <div class="page-title" style="text-align: right; padding: 12px 16px 4px;">الرسائل المباشرة</div>
   <div class="inbox-tabs">
-    <span class="inbox-tab active" data-inbox="notifications">الإشعارات</span>
-    <span class="inbox-tab" data-inbox="dms">المحادثات</span>
-    <span class="inbox-tab" data-inbox="group">الدردشة الجماعية</span>
+    <span class="inbox-tab active" data-inbox="dms">💬 المحادثات</span>
+    <span class="inbox-tab" data-inbox="notifications">🔔 الإشعارات</span>
+    <span class="inbox-tab" data-inbox="group">🌐 الدردشة العامة</span>
   </div>
 
-  <div class="inbox-panel active" id="panel-notifications">
-    <div id="notifications-list" class="scroll-panel"></div>
-  </div>
-
-  <div class="inbox-panel" id="panel-dms">
+  <div class="inbox-panel active" id="panel-dms">
     <div id="dm-list" class="scroll-panel"></div>
+  </div>
+
+  <div class="inbox-panel" id="panel-notifications">
+    <div id="notifications-list" class="scroll-panel"></div>
   </div>
 
   <div class="inbox-panel" id="panel-group">
@@ -98,72 +172,79 @@
   </div>
 </div>
 
-<!-- 5️⃣ الملف الشخصي -->
+<!-- 5️⃣ الملف الشخصي (مزيج Instagram + TikTok) -->
 <div id="profile-page" class="page">
   <div class="profile-scroll">
-    <div class="profile-header">
-      <div class="profile-pic" id="display-profile-pic">👤</div>
-      <div class="profile-username" id="display-name">جاري التحميل...</div>
-      <div class="profile-handle" id="display-handle">...</div>
-      <div class="profile-bio" id="display-bio"></div>
-      <div class="profile-stats">
-        <div class="stat-item" id="stat-following"><strong>0</strong><span>متابَع</span></div>
-        <div class="stat-item" id="stat-followers"><strong>0</strong><span>متابعون</span></div>
-        <div class="stat-item" id="stat-likes"><strong>0</strong><span>إعجاب</span></div>
-        <div class="stat-item" id="stat-coins"><strong>0</strong><span>عملات</span></div>
-      </div>
-      <div class="profile-actions">
-        <button class="edit-profile-btn" id="edit-profile-open">تعديل الملف الشخصي</button>
-        <button class="edit-profile-btn" id="wallet-btn">💰 المحفظة</button>
-        <!-- ⚙️ تم تنظيف الواجهة بوضع زر موحد مستقل للإعدادات هنا -->
-        <button class="edit-profile-btn" id="open-settings-page-btn" style="background: #2c2c2e; color: #fff;">⚙️ الإعدادات والخصوصية</button>
+    <!-- شريط علوي للملف الشخصي مع اسم المستخدم وأيقونة الإعدادات -->
+    <div class="profile-top-bar">
+      <div class="profile-top-handle" id="top-bar-handle">@jix_777</div>
+      <div class="profile-top-actions">
+        <button class="profile-icon-btn" id="profile-settings-btn" title="الإعدادات وتسجيل الخروج">⚙️</button>
       </div>
     </div>
+
+    <div class="profile-header">
+      <div class="profile-pic-wrapper">
+        <div class="profile-pic" id="display-profile-pic">👤</div>
+        <button class="profile-pic-edit-badge" id="quick-pic-edit-btn" title="تغيير الصورة">📷</button>
+      </div>
+      <div class="profile-username-wrap">
+        <span class="profile-username" id="display-name">JIX Owner</span>
+        <span class="verified-badge-icon" title="موثق">✓</span>
+      </div>
+      <div class="profile-handle" id="display-handle">@jix_777</div>
+      <div class="profile-bio" id="display-bio"></div>
+      
+      <div class="profile-stats">
+        <div class="stat-item" id="stat-posts"><strong>0</strong><span>منشورات</span></div>
+        <div class="stat-item" id="stat-followers"><strong>128</strong><span>متابعون</span></div>
+        <div class="stat-item" id="stat-following"><strong>42</strong><span>أتابعهم</span></div>
+        <div class="stat-item" id="stat-likes"><strong>1.4K</strong><span>إعجابات</span></div>
+      </div>
+
+      <div class="profile-actions">
+        <button class="edit-profile-btn" id="edit-profile-open">تعديل الملف الشخصي</button>
+        <button class="edit-profile-btn vip-shop-btn" id="vip-numbers-btn">💎 الأرقام المميزة</button>
+        <button class="edit-profile-btn wallet-action-btn" id="wallet-btn">💰 500 عملة</button>
+      </div>
+    </div>
+
+    <!-- 🌟 أبرز القصص (Instagram Story Highlights) -->
+    <div class="highlights-section">
+      <div class="highlights-title">أبرز القصص</div>
+      <div class="highlights-row" id="highlights-row">
+        <div class="highlight-item add-highlight-item" id="add-highlight-btn">
+          <div class="highlight-circle add-circle">+</div>
+          <span>جديد</span>
+        </div>
+        <div class="highlight-item" data-hl="memories">
+          <div class="highlight-circle">🌟</div>
+          <span>مميز</span>
+        </div>
+        <div class="highlight-item" data-hl="bts">
+          <div class="highlight-circle">🎬</div>
+          <span>كواليس</span>
+        </div>
+        <div class="highlight-item" data-hl="travel">
+          <div class="highlight-circle">✈️</div>
+          <span>رحلات</span>
+        </div>
+        <div class="highlight-item" data-hl="gifts">
+          <div class="highlight-circle">🎁</div>
+          <span>بثوث</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- تبويبات شبكة الملف الشخصي -->
     <div class="profile-tabs">
-      <span class="profile-tab active" data-ptab="videos">🎥 الفيديوهات</span>
+      <span class="profile-tab active" data-ptab="videos">🎬 الفيديوهات</span>
       <span class="profile-tab" data-ptab="liked">❤️ الإعجابات</span>
+      <span class="profile-tab" data-ptab="saved">🔖 المحفوظات</span>
     </div>
     <div class="profile-videos-grid" id="profile-grid-videos"></div>
     <div class="profile-videos-grid" id="profile-grid-liked" style="display:none;"></div>
-  </div>
-</div>
-
-<!-- ⚙️ 7️⃣ صفحة الإعدادات والخصوصية المستقلة والكاملة للمنصة -->
-<div id="settings-page" class="page">
-  <div class="top-header">
-    <div class="header-icon" id="back-to-profile-btn" style="cursor: pointer; font-size: 20px;">➡️</div>
-    <div class="page-title" style="margin-right: auto; margin-left: auto;">الإعدادات والخصوصية</div>
-    <div style="width: 24px;"></div>
-  </div>
-  
-  <div class="settings-list" style="padding: 15px;">
-    <!-- قسم الحساب -->
-    <div class="settings-section-title" style="color: #8a8a8f; font-size: 13px; margin-bottom: 10px; margin-top: 20px;">الحساب</div>
-    <button class="settings-item-btn" id="login-trigger-btn" style="width: 100%; background: #fe2c55; color: #fff; border: none; padding: 15px; border-radius: 10px; font-weight: bold; margin-bottom: 10px; text-align: right; display: flex; justify-content: space-between; align-items: center;">
-      <span>🔐 تسجيل الدخول أو إنشاء حساب جديد</span> <span>❯</span>
-    </button>
-    
-    <!-- قسم الأمان والخصوصية -->
-    <div class="settings-section-title" style="color: #8a8a8f; font-size: 13px; margin-bottom: 10px; margin-top: 20px;">الخصوصية والأمان</div>
-    <div style="background: #1c1c1e; border-radius: 10px; padding: 5px; margin-bottom: 20px;">
-      <div style="padding: 15px; color: #fff; display: flex; justify-content: space-between; border-bottom: 1px solid #2c2c2e;">
-        <span>حساب خاص</span>
-        <input type="checkbox" id="private-account-toggle">
-      </div>
-      <div style="padding: 15px; color: #fff; display: flex; justify-content: space-between;">
-        <span>قائمة الحظر</span>
-        <span style="color: #8a8a8f;">❯</span>
-      </div>
-    </div>
-
-    <!-- قسم الإجراءات الحساسة -->
-    <div class="settings-section-title" style="color: #8a8a8f; font-size: 13px; margin-bottom: 10px;">إجراءات النظام</div>
-    <button class="settings-item-btn" id="logout-trigger-btn" style="width: 100%; background: #2c2c2e; color: #ff3b30; border: none; padding: 15px; border-radius: 10px; font-weight: bold; margin-bottom: 10px; text-align: right; display: flex; justify-content: space-between; align-items: center;">
-      <span>🚪 تسجيل الخروج من الحساب</span> <span>❯</span>
-    </button>
-    <button class="settings-item-btn" id="delete-account-btn" style="width: 100%; background: #1c1c1e; color: #ff3b30; border: none; padding: 15px; border-radius: 10px; font-weight: normal; text-align: right; display: flex; justify-content: space-between; align-items: center; opacity: 0.6;">
-      <span>🗑️ حذف الحساب نهائياً</span> <span>❯</span>
-    </button>
+    <div class="profile-videos-grid" id="profile-grid-saved" style="display:none;"></div>
   </div>
 </div>
 
@@ -187,6 +268,7 @@
     <video id="live-local-video" autoplay muted playsinline></video>
     <div class="live-top-bar">
       <div class="live-badge">🔴 مباشر</div>
+      <div class="live-owner-tag">👑 Owner / المالك</div>
       <div class="live-viewers"><span id="live-viewer-count">0</span> مشاهد</div>
       <div class="live-close" id="end-live-btn">إنهاء</div>
     </div>
@@ -197,17 +279,97 @@
     </div>
   </div>
 </div>
-<!-- 📦 نافذة تعديل الحساب -->
+
+<!-- 📦 نافذة تعديل الحساب والصورة الشخصية -->
 <div id="edit-modal" class="modal-overlay">
-  <div class="modal-content">
+  <div class="modal-content edit-profile-sheet">
     <h3>تعديل الملف الشخصي</h3>
-    <div class="input-group"><label>الاسم:</label><input type="text" id="input-name" maxlength="30"></div>
-    <div class="input-group"><label>اسم المستخدم:</label><input type="text" id="input-handle" maxlength="20"></div>
-    <div class="input-group"><label>نبذة:</label><input type="text" id="input-bio" maxlength="80"></div>
-    <div class="input-group"><label>رابط الصورة أو إيموجي:</label><input type="text" id="input-pic" maxlength="200"></div>
+    
+    <!-- قسم تعديل ومعاينة الصورة الشخصية -->
+    <div class="avatar-edit-section">
+      <div class="avatar-preview-circle" id="avatar-preview-circle">👤</div>
+      <div class="avatar-edit-btns">
+        <label for="input-avatar-file" class="avatar-upload-btn">📁 اختر صورة من جهازك</label>
+        <input type="file" id="input-avatar-file" accept="image/*" style="display:none;">
+        <span class="avatar-hint">أو ضع رابط صورة / إيموجي بالأسفل</span>
+      </div>
+    </div>
+
+    <div class="input-group"><label>الاسم الكامل:</label><input type="text" id="input-name" maxlength="30" placeholder="اسمك"></div>
+    <div class="input-group">
+      <label>اسم المستخدم (Handle / رقم الحساب):</label>
+      <input type="text" id="input-handle" maxlength="20" placeholder="username">
+      <small id="handle-vip-note" style="font-size: 11px; color: var(--jix-text-dim); display: block; margin-top: 3px;">
+        💡 الأرقام المميزة (الأحادية والثلاثية والرباعية) محجوزة حصرياً للبيع عبر متجر VIP.
+      </small>
+    </div>
+    <div class="input-group"><label>النبذة التعريفية (Bio):</label><input type="text" id="input-bio" maxlength="100" placeholder="أخبر الناس عنك..."></div>
+    <div class="input-group"><label>رابط الصورة أو إيموجي بديل:</label><input type="text" id="input-pic" maxlength="300" placeholder="https://... أو 🌟"></div>
+    
     <div class="modal-buttons">
-      <button class="btn-save" id="save-profile-btn">حفظ</button>
+      <button class="btn-save" id="save-profile-btn">حفظ التعديلات</button>
       <button class="btn-cancel" id="close-edit-btn">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- ⚙️ نافذة الإعدادات وتسجيل الخروج -->
+<div id="settings-modal" class="modal-overlay">
+  <div class="modal-content settings-sheet">
+    <div class="sheet-handle"></div>
+    <div class="settings-header">
+      <h3>⚙️ الإعدادات والحساب</h3>
+      <button class="settings-close-icon" id="close-settings-btn">✕</button>
+    </div>
+    
+    <div class="settings-user-card">
+      <div class="settings-user-avatar" id="settings-user-avatar">👤</div>
+      <div class="settings-user-info">
+        <strong id="settings-user-name">المستخدم</strong>
+        <span id="settings-user-email">user@jix.app</span>
+      </div>
+    </div>
+
+    <div class="settings-options-list">
+      <button class="settings-item" id="settings-vip-numbers-btn">
+        <span class="s-icon">💎</span>
+        <span class="s-label">سوق الأرقام المميزة (VIP)</span>
+        <span class="s-state" style="color: #ffd700; font-weight: 800;">جديد</span>
+      </button>
+      <button class="settings-item" id="settings-edit-profile-btn">
+        <span class="s-icon">✏️</span>
+        <span class="s-label">تعديل الملف الشخصي والصورة</span>
+        <span class="s-arrow">‹</span>
+      </button>
+      <button class="settings-item" id="settings-switch-account-btn">
+        <span class="s-icon">🔄</span>
+        <span class="s-label">تسجيل الدخول بحساب آخر</span>
+        <span class="s-arrow">‹</span>
+      </button>
+      <button class="settings-item" id="settings-notifications-toggle">
+        <span class="s-icon">🔔</span>
+        <span class="s-label">الإشعارات والتنبيهات</span>
+        <span class="s-state" id="notif-state-text">مفعلة</span>
+      </button>
+      <button class="settings-item" id="settings-help-btn">
+        <span class="s-icon">ℹ️</span>
+        <span class="s-label">عن تطبيق JIX (الإصدار 2.5)</span>
+        <span class="s-arrow">‹</span>
+      </button>
+      
+      <div class="settings-divider"></div>
+
+      <!-- زر تسجيل الخروج والتبديل -->
+      <button class="settings-item logout-item" id="logout-action-btn">
+        <span class="s-icon">🚪</span>
+        <span class="s-label">تسجيل الخروج وإنشاء حساب جديد</span>
+      </button>
+
+      <!-- زر إغلاق / حذف الحساب نهائياً -->
+      <button class="settings-item delete-account-item" id="delete-account-action-btn" style="color: #ff4b4b; background: rgba(255,75,75,0.06); margin-top: 6px;">
+        <span class="s-icon">🗑️</span>
+        <span class="s-label">إغلاق وحذف الحساب نهائياً</span>
+      </button>
     </div>
   </div>
 </div>
@@ -218,9 +380,9 @@
     <div class="sheet-handle"></div>
     <h3><span id="comments-count">0</span> تعليق</h3>
     <div id="comments-list" class="comments-list"></div>
-    <div class="comment-input-area">
-      <input type="text" id="comment-input-field" maxlength="150" placeholder="أضف تعليقاً...">
-      <button class="chat-send-btn" id="comment-send-btn">نشر</button>
+    <div class="chat-input-area">
+      <input type="text" id="comment-input" maxlength="200" placeholder="أضف تعليقاً...">
+      <button class="chat-send-btn" id="comment-send-btn">إرسال</button>
     </div>
   </div>
 </div>
@@ -257,22 +419,313 @@
   </div>
 </div>
 
-<!-- 🔑 نافذة تسجيل الدخول -->
-<div id="auth-modal" class="modal-overlay">
-  <div class="modal-content">
-    <h3>مرحباً بك في JIX</h3>
-    <p class="auth-hint">سجّل الدخول برمز يُرسل إلى بريدك الإلكتروني — بدون كلمة مرور تُخزَّن.</p>
-    <div class="input-group"><label>البريد الإلكتروني:</label><input type="email" id="auth-email" maxlength="100"></div>
-    <button class="btn-save" id="auth-send-btn">إرسال رمز الدخول</button>
-    <div class="input-group" id="auth-otp-group" style="display:none;">
-      <label>رمز التحقق:</label><input type="text" id="auth-otp" maxlength="6" inputmode="numeric">
-      <button class="btn-save" id="auth-verify-btn">تأكيد</button>
+<!-- 💎 متجر الأرقام المميزة (VIP Numbers Store) -->
+<div id="vip-numbers-modal" class="modal-overlay">
+  <div class="modal-content vip-store-sheet">
+    <div class="sheet-handle"></div>
+    <div class="vip-store-header">
+      <div class="vip-title-wrap">
+        <span class="vip-crown">👑</span>
+        <div>
+          <h3>سوق الأرقام المميزة</h3>
+          <p class="vip-subtitle">امتلك معرّفاً ملكياً فخماً وثبته على حسابك فورياً</p>
+        </div>
+      </div>
+      <button class="settings-close-icon" id="close-vip-store-btn">✕</button>
     </div>
-    <button class="btn-cancel" id="auth-guest-btn">المتابعة كضيف (وضع تجريبي محلي)</button>
+
+    <!-- بطاقة المعرف الحالي -->
+    <div class="current-vip-badge-card">
+      <span>معرّفك الحالي:</span>
+      <strong id="current-vip-handle">@jix_777</strong>
+    </div>
+
+    <!-- تصنيفات الأرقام -->
+    <div class="vip-categories-tabs">
+      <button class="vip-cat-tab active" data-cat="all">الكل 🌟</button>
+      <button class="vip-cat-tab" data-cat="triple">ثلاثية 🔥</button>
+      <button class="vip-cat-tab" data-cat="quad">رباعية 💎</button>
+      <button class="vip-cat-tab" data-cat="royal">ملكية 👑</button>
+    </div>
+
+    <!-- شبكة الأرقام المميزة المعروضة للشراء -->
+    <div class="vip-numbers-grid" id="vip-numbers-grid"></div>
+
+    <button class="btn-cancel" id="close-vip-store-btn2">إغلاق</button>
   </div>
 </div>
 
-<!-- 📱 شريط التنقل السفلي الثابت -->
+<!-- 💳 نافذة الدفع بالبطاقة الائتمانية والبنكية لشراء الرقم المميز -->
+<div id="card-checkout-modal" class="modal-overlay">
+  <div class="modal-content card-checkout-sheet">
+    <div class="sheet-handle"></div>
+    <div class="checkout-header">
+      <h3>إتمام الشراء بالبطاقة البنكية</h3>
+      <button class="settings-close-icon" id="close-checkout-btn">✕</button>
+    </div>
+
+    <!-- ملخص الرقم المحدد وسعره -->
+    <div class="checkout-summary-card">
+      <div class="summary-item-info">
+        <span class="summary-label">الرقم المميز المختار:</span>
+        <span class="summary-val-badge" id="checkout-selected-number">@jix_111</span>
+      </div>
+      <div class="summary-price-info">
+        <span class="summary-label">المبلغ المطلوب:</span>
+        <strong class="summary-price-val" id="checkout-price-val">$49.99</strong>
+      </div>
+    </div>
+
+    <!-- معاينة بطاقة الدفع (Credit Card Visual) -->
+    <div class="visual-credit-card">
+      <div class="card-chip"></div>
+      <div class="card-number-display" id="card-preview-number">•••• •••• •••• ••••</div>
+      <div class="card-bottom-row">
+        <div class="card-holder-info">
+          <small>حامل البطاقة</small>
+          <span id="card-preview-name">CARD HOLDER</span>
+        </div>
+        <div class="card-exp-info">
+          <small>تنتهي في</small>
+          <span id="card-preview-exp">MM/YY</span>
+        </div>
+        <div class="card-brand-logo" id="card-brand-icon">💳 VISA</div>
+      </div>
+    </div>
+
+    <!-- نموذج بيانات البطاقة -->
+    <form id="card-payment-form" onsubmit="return false;" class="card-form">
+      <div class="input-group">
+        <label>رقم البطاقة (Card Number):</label>
+        <div class="card-input-wrap">
+          <input type="text" id="input-card-number" placeholder="4111 2222 3333 4444" maxlength="19" autocomplete="cc-number">
+          <span class="card-input-icon" id="card-type-indicator">💳</span>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label>اسم حامل البطاقة (Name on Card):</label>
+        <input type="text" id="input-card-holder" placeholder="مثال: AHMED MOHAMMED" maxlength="26" autocomplete="cc-name">
+      </div>
+
+      <div class="card-meta-row">
+        <div class="input-group">
+          <label>تاريخ الانتهاء (MM/YY):</label>
+          <input type="text" id="input-card-expiry" placeholder="12/28" maxlength="5" autocomplete="cc-exp">
+        </div>
+        <div class="input-group">
+          <label>رمز الأمان (CVV):</label>
+          <input type="password" id="input-card-cvv" placeholder="•••" maxlength="4" autocomplete="cc-csc">
+        </div>
+      </div>
+
+      <div class="secure-badge">
+        <span>🔒 عملية دفع آمنة ومشفرة عبر تقنية SSL 256-bit</span>
+      </div>
+
+      <div class="modal-buttons">
+        <button type="button" class="btn-save pay-submit-btn" id="confirm-card-pay-btn">
+          <span>تأكيد الدفع بالبطاقة وتفعيل الرقم 🚀</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 🔑 نافذة تسجيل الدخول وإنشاء حساب جديد بالبريد وكلمة المرور -->
+<div id="auth-modal" class="modal-overlay">
+  <div class="modal-content auth-dialog">
+    <div class="auth-brand-badge">JIX</div>
+    <h3 id="auth-title">تسجيل الدخول إلى حسابك</h3>
+    
+    <div class="auth-tabs-row">
+      <button class="auth-tab-btn active" id="tab-login-btn">تسجيل الدخول</button>
+      <button class="auth-tab-btn" id="tab-signup-btn">إنشاء حساب جديد</button>
+    </div>
+
+    <!-- نموذج تسجيل الدخول -->
+    <div id="login-form-area" class="auth-form-panel">
+      <div class="input-group">
+        <label>البريد الإلكتروني:</label>
+        <input type="email" id="login-email" maxlength="100" placeholder="example@email.com" autocomplete="email">
+      </div>
+      <div class="input-group">
+        <label>كلمة المرور:</label>
+        <input type="password" id="login-password" maxlength="50" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <button class="btn-save auth-action-btn" id="submit-login-btn">دخول</button>
+    </div>
+
+    <!-- نموذج إنشاء حساب جديد -->
+    <div id="signup-form-area" class="auth-form-panel" style="display:none;">
+      <div class="input-group">
+        <label>الاسم الكامل:</label>
+        <input type="text" id="signup-fullname" maxlength="30" placeholder="مثال: أحمد محمد">
+      </div>
+      <div class="input-group">
+        <label>رقم الحساب التلقائي (Standard User ID):</label>
+        <input type="text" id="signup-handle" maxlength="20" placeholder="يبدأ تلقائياً بـ 579348..." readonly style="background: rgba(255,255,255,0.05); color: #25f4ee; font-family: monospace; font-weight: 700; cursor: not-allowed;" title="الأرقام المميزة محجوزة وتباع في سوق الأرقام المميزة">
+        <small style="font-size: 10px; color: var(--jix-text-dim); display: block; margin-top: 3px;">🔒 الأرقام المميزة محجوزة رسمياً — تبدأ حسابات الأعضاء الجدد تلقائياً بـ 579348 ويمكنك شراء رقم مميز بالبطاقة لاحقاً.</small>
+      </div>
+      <div class="input-group">
+        <label>البريد الإلكتروني:</label>
+        <input type="email" id="signup-email" maxlength="100" placeholder="example@email.com" autocomplete="email">
+      </div>
+      <div class="input-group">
+        <label>كلمة المرور:</label>
+        <input type="password" id="signup-password" maxlength="50" placeholder="اختر كلمة مرور آمنة" autocomplete="new-password">
+      </div>
+      <button class="btn-save auth-action-btn" id="submit-signup-btn">إرسال رمز التحقق للبريد الإلكتروني 📩</button>
+    </div>
+
+    <!-- خطوة التحقق من البريد الإلكتروني برمز 6 أرقام (TikTok / Instagram Verification) -->
+    <div id="verify-otp-panel" class="auth-form-panel" style="display:none;">
+      <div class="otp-header-info">
+        <span class="otp-mail-icon">📨</span>
+        <h4>تحقق من بريدك الإلكتروني</h4>
+        <p class="otp-subtitle">أدخل رمز الأمان المكون من 6 أرقام المرسل إلى:<br><strong id="otp-target-email">user@email.com</strong></p>
+      </div>
+
+      <!-- إشعار محاكاة صندوق الوارد للبريد الإلكتروني Real-like Notification Toast -->
+      <div class="simulated-email-notification" id="simulated-email-box">
+        <div class="sim-email-badge">📧 بريد وارد جديد (JIX Security)</div>
+        <div class="sim-email-content">
+          <strong>كود التحقق الخاص بك هو:</strong>
+          <span class="sim-code-val" id="sim-code-display">849201</span>
+        </div>
+        <small>لا تشارك هذا الرمز مع أي شخص لحماية حسابك.</small>
+      </div>
+
+      <div class="otp-inputs-row" dir="ltr">
+        <input type="text" inputmode="numeric" maxlength="1" class="otp-digit" id="otp-d1" autocomplete="one-time-code">
+        <input type="text" inputmode="numeric" maxlength="1" class="otp-digit" id="otp-d2">
+        <input type="text" inputmode="numeric" maxlength="1" class="otp-digit" id="otp-d3">
+        <input type="text" inputmode="numeric" maxlength="1" class="otp-digit" id="otp-d4">
+        <input type="text" inputmode="numeric" maxlength="1" class="otp-digit" id="otp-d5">
+        <input type="text" inputmode="numeric" maxlength="1" class="otp-digit" id="otp-d6">
+      </div>
+
+      <button class="btn-save auth-action-btn" id="confirm-otp-btn" style="margin-top: 14px;">تأكيد الرمز وتفعيل الحساب 🚀</button>
+      <div class="otp-resend-row">
+        <span>لم يصلك الرمز؟ </span>
+        <button type="button" class="btn-link" id="resend-otp-btn">إعادة إرسال الرمز</button>
+        <span id="otp-timer-count" style="font-size: 11px; color: var(--jix-text-dim); margin-right: 4px;">(60s)</span>
+      </div>
+      <button type="button" class="btn-link-cancel" id="back-to-signup-btn">‹ العودة وتعديل البيانات</button>
+    </div>
+
+    <div class="auth-footer-options">
+      <button class="btn-cancel btn-guest-option" id="auth-guest-btn">المتابعة كضيف محلياً</button>
+    </div>
+  </div>
+</div>
+
+<!-- 📖 عارض قصص إنستغرام بملء الشاشة (Instagram Story Viewer) -->
+<div id="story-viewer-modal" class="story-viewer-overlay" style="display:none;">
+  <div class="story-viewer-content">
+    <div class="story-progress-container" id="story-progress-bars"></div>
+    <div class="story-header">
+      <div class="story-user-info">
+        <div class="story-avatar" id="story-view-avatar">👤</div>
+        <div class="story-meta">
+          <span class="story-username" id="story-view-username"></span>
+          <span class="story-time" id="story-view-time"></span>
+        </div>
+      </div>
+      <button class="story-close-btn" id="story-close-btn">✕</button>
+    </div>
+    
+    <div class="story-media-container" id="story-media-container"></div>
+    
+    <div class="story-nav-touch touch-prev" id="story-prev-area" title="السابق"></div>
+    <div class="story-nav-touch touch-next" id="story-next-area" title="التالي"></div>
+    
+    <!-- شريط تفاعل ورسائل الستوري -->
+    <div class="story-reply-bar">
+      <div class="story-quick-reactions">
+        <span class="story-react-btn" data-emoji="🔥">🔥</span>
+        <span class="story-react-btn" data-emoji="❤️">❤️</span>
+        <span class="story-react-btn" data-emoji="👏">👏</span>
+        <span class="story-react-btn" data-emoji="😂">😂</span>
+        <span class="story-react-btn" data-emoji="😍">😍</span>
+        <span class="story-react-btn" data-emoji="😮">😮</span>
+      </div>
+      <div class="story-reply-input-wrap">
+        <input type="text" id="story-reply-input" placeholder="رد على القصة...">
+        <button id="story-reply-send">➤</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 💬 شاشة المحادثة الخاصة بنمط Instagram DM -->
+<div id="dm-conversation-modal" class="dm-conv-overlay" style="display:none;">
+  <div class="dm-conv-header">
+    <button class="dm-back-btn" id="dm-back-btn">✕</button>
+    <div class="dm-conv-user">
+      <div class="dm-conv-avatar" id="dm-conv-avatar">👤</div>
+      <div class="dm-conv-info">
+        <div class="dm-conv-name" id="dm-conv-name">المستخدم</div>
+        <div class="dm-conv-status" id="dm-conv-status">🟢 نشط الآن</div>
+      </div>
+    </div>
+    <div class="dm-header-actions">
+      <button class="dm-icon-btn" id="dm-call-btn" title="مكالمة صوتية">📞</button>
+      <button class="dm-icon-btn" id="dm-videocall-btn" title="مكالمة فيديو">📹</button>
+    </div>
+  </div>
+  <div class="dm-messages-container" id="dm-messages-container"></div>
+  <div class="dm-input-bar">
+    <button class="dm-tool-btn" id="dm-quick-heart" title="قلب سريع">❤️</button>
+    <input type="text" id="dm-input-text" maxlength="400" placeholder="اكتب رسالة خاصة...">
+    <button class="dm-tool-btn" id="dm-voice-btn" title="تسجيل صوتي">🎙️</button>
+    <button class="dm-send-btn" id="dm-send-btn">➤</button>
+  </div>
+</div>
+
+<!-- 📞 شاشة المكالمات الصوتية والمرئية الحية (Voice & Video Calls in DMs) -->
+<div id="dm-call-modal" class="call-modal-overlay" style="display:none;">
+  <div class="call-content-box" id="call-content-box">
+    <div class="call-video-bg" id="call-video-bg" style="display:none;">
+      <video id="call-remote-video" class="remote-video" autoplay playsinline></video>
+      <video id="call-local-video" class="local-video-pip" autoplay muted playsinline></video>
+    </div>
+
+    <div class="call-info-area">
+      <div class="call-avatar-pulse-wrap">
+        <div class="call-avatar-circle" id="call-avatar">👤</div>
+        <div class="call-pulse-ring"></div>
+      </div>
+      <h2 class="call-partner-name" id="call-partner-name">اسم المستخدم</h2>
+      <div class="call-status-badge" id="call-status-badge">جاري الاتصال...</div>
+      <div class="call-timer-badge" id="call-timer" style="display:none;">00:00</div>
+    </div>
+
+    <div class="call-controls-bar">
+      <button class="call-ctrl-btn" id="call-mute-btn" title="كتم الصوت">
+        <span class="ctrl-icon" id="call-mute-icon">🎙️</span>
+        <span class="ctrl-label">كتم</span>
+      </button>
+      <button class="call-ctrl-btn" id="call-cam-toggle-btn" title="تبديل الكاميرا">
+        <span class="ctrl-icon" id="call-cam-icon">📹</span>
+        <span class="ctrl-label">الكاميرا</span>
+      </button>
+      <button class="call-ctrl-btn" id="call-speaker-btn" title="مكبر الصوت">
+        <span class="ctrl-icon" id="call-speaker-icon">🔊</span>
+        <span class="ctrl-label">سبيكر</span>
+      </button>
+      <button class="call-ctrl-btn call-end-btn" id="call-hangup-btn" title="إنهاء المكالمة">
+        <span class="ctrl-icon">📞</span>
+        <span class="ctrl-label">إنهاء</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- رافع قصة مخفي -->
+<input type="file" id="story-file-picker" accept="video/*,image/*" style="display:none;">
+
+<!-- 📱 شريط التنقل -->
 <div class="bottom-nav">
   <div class="nav-item active" id="nav-home" data-tab="home"><div class="nav-icon">🏠</div><span>الرئيسية</span></div>
   <div class="nav-item" id="nav-discover" data-tab="discover"><div class="nav-icon">🔍</div><span>اكتشف</span></div>
@@ -281,13 +734,6 @@
   <div class="nav-item" id="nav-profile" data-tab="profile"><div class="nav-icon">👤</div><span>حسابي</span></div>
 </div>
 
-<!-- 🔗 ربط تطبيق JIX بقاعدة بيانات سوبابيز بالرابط الصحيح الحقيقي والمثالي -->
-<script>
-  window.SUPABASE_URL = "https://wfvhzlpvtgnydhmsxcqr.supabase.co/";
-  window.SUPABASE_ANON_KEY = "sb_publishable_B6aT1T-ft6Stj0RfPk0xxw_gxpeXnA1";
-</script>
-
-<!-- تحميل مكتبات السيرفر والنظام الأصلي دفعة واحدة دون أخطاء -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="live-config.js" defer></script>
 <script src="security.js" defer></script>
